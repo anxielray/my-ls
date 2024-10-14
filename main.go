@@ -1,9 +1,9 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/fs"
+	"math"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -12,8 +12,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unsafe"
 
-	"golang.org/x/term" // Third party library for displaying terminal information
+	"golang.org/x/sys/unix"
 )
 
 type Options struct {
@@ -22,180 +23,526 @@ type Options struct {
 	ShowHidden bool
 	Reverse    bool
 	SortByTime bool
+	SortBySize bool
+	OnePerLine bool
 }
 
 type FileInfo struct {
-	Name      string
-	Size      int64
-	Mode      fs.FileMode
-	ModTime   time.Time
-	IsDir     bool
-	User      string
-	Group     string
-	Links     int
-	BlockSize int64
+	Name       string
+	Size       int64
+	Mode       os.FileMode
+	ModTime    time.Time
+	IsDir      bool
+	Nlink      uint64
+	Uid        uint32
+	Gid        uint32
+	IsLink     bool
+	LinkTarget string
+	Rdev       uint64
+	Blocks     int64
 }
 
+const (
+	ColorBlue    = "\033[34m"
+	ColorCyan    = "\033[36m"
+	ColorGreen   = "\033[32m"
+	ColorMagenta = "\033[35m"
+	ColorYellow  = "\033[33m"
+	ColorReset   = "\033[0m"
+)
+
 func main() {
-	opts := parseFlags()
-	args := flag.Args()
+	options, args := parseFlags()
 
 	if len(args) == 0 {
 		args = []string{"."}
 	}
 
-	for _, path := range args {
-		err := listDirectory(path, opts)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		}
-	}
-}
-
-func parseFlags() Options {
-	var opts Options
-	flag.BoolVar(&opts.LongFormat, "l", false, "Use long listing format")
-	flag.BoolVar(&opts.Recursive, "R", false, "List subdirectories recursively")
-	flag.BoolVar(&opts.ShowHidden, "a", false, "Do not ignore entries starting with .")
-	flag.BoolVar(&opts.Reverse, "r", false, "Reverse order while sorting")
-	flag.BoolVar(&opts.SortByTime, "t", false, "Sort by modification time, newest first")
-
-	flag.Parse()
-
-	return opts
-}
-
-func listDirectory(path string, opts Options) error {
-	entries, err := os.ReadDir(path)
-	if err != nil {
-		return err
-	}
-
-	var fileInfos []FileInfo
-	var totalBlocks int64
-
-	for _, entry := range entries {
-		info, err := entry.Info()
-		if err != nil {
-			return err
+	for i, arg := range args {
+		if len(args) > 1 {
+			if i > 0 {
+				fmt.Println()
+			}
+			fmt.Printf("%s:\n", arg)
 		}
 
-		// if !opts.ShowHidden && strings.HasPrefix(info.Name(), ".") && info.Name() != "." && info.Name() != ".." {
-		// 	continue
-		// }
-		if !opts.ShowHidden && strings.HasPrefix(info.Name(), ".") {
+		fileInfo, err := os.Stat(arg)
+		if err != nil {
+			fmt.Printf("ls: cannot access '%s': %v\n", arg, err)
 			continue
 		}
 
-		stat := info.Sys().(*syscall.Stat_t)
-		usr, _ := user.LookupId(strconv.Itoa(int(stat.Uid)))
-		group, _ := user.LookupGroupId(strconv.Itoa(int(stat.Gid)))
-
-		fi := FileInfo{
-			Name:      info.Name(),
-			Size:      info.Size(),
-			Mode:      info.Mode(),
-			ModTime:   info.ModTime(),
-			IsDir:     info.IsDir(),
-			User:      usr.Username,
-			Group:     group.Name,
-			Links:     int(stat.Nlink),
-			BlockSize: stat.Blocks,
-		}
-
-		fileInfos = append(fileInfos, fi)
-		totalBlocks += fi.BlockSize
-	}
-
-	sortEntries(fileInfos, opts)
-
-	if opts.LongFormat {
-		fmt.Printf("total %d\n", totalBlocks/2) // Convert to 1K-blocks
-		for _, fi := range fileInfos {
-			displayLongFormat(fi)
-		}
-	} else {
-		displayColumns(fileInfos)
-	}
-
-	if opts.Recursive {
-		for _, fi := range fileInfos {
-			if fi.IsDir && fi.Name != "." && fi.Name != ".." {
-				newPath := filepath.Join(path, fi.Name)
-				fmt.Printf("\n%s:\n", newPath)
-				if err := listDirectory(newPath, opts); err != nil {
-					fmt.Println("ls: cannot open directory", err) // output: ls: cannot open directory '/etc/ssl/private': Permission denied
-					continue
-				}
+		if fileInfo.IsDir() {
+			if options.Recursive {
+				listRecursive(arg, options)
+			} else {
+				listDir(arg, options)
 			}
-		}
-	}
-
-	return nil
-}
-
-func sortEntries(entries []FileInfo, opts Options) {
-	sort.Slice(entries, func(i, j int) bool {
-		if opts.SortByTime {
-			if entries[i].ModTime.Equal(entries[j].ModTime) {
-				return strings.ToLower(entries[i].Name) < strings.ToLower(entries[j].Name)
-			}
-			return entries[i].ModTime.After(entries[j].ModTime)
-		}
-		return strings.ToLower(entries[i].Name) < strings.ToLower(entries[j].Name)
-	})
-
-	if opts.Reverse {
-		for i := 0; i < len(entries)/2; i++ {
-			j := len(entries) - 1 - i
-			entries[i], entries[j] = entries[j], entries[i]
+		} else {
+			listSingleFile(arg, options)
 		}
 	}
 }
 
-func displayLongFormat(fi FileInfo) {
-	fmt.Printf("%s %2d %-8s %-8s %8d %s %s\n",
-		fi.Mode,
-		fi.Links,
-		fi.User,
-		fi.Group,
-		fi.Size,
-		fi.ModTime.Format("Jan _2 15:04"),
-		fi.Name)
-}
-
-func displayColumns(files []FileInfo) {
-	if len(files) == 0 {
+func listSingleFile(path string, options Options) {
+	fileInfo, err := os.Lstat(path)
+	if err != nil {
+		fmt.Printf("ls: cannot access '%s': %v\n", path, err)
 		return
 	}
 
-	width, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		width = 80 // fallback to 80 if unable to get terminal width
+	file := FileInfo{
+		Name:    fileInfo.Name(),
+		Size:    fileInfo.Size(),
+		Mode:    fileInfo.Mode(),
+		ModTime: fileInfo.ModTime(),
+		IsDir:   fileInfo.IsDir(),
+		IsLink:  fileInfo.Mode()&os.ModeSymlink != 0,
 	}
 
-	// Calculate the maximum width of file names
-	maxWidth := 0
-	for _, file := range files {
-		if len(file.Name) > maxWidth {
-			maxWidth = len(file.Name)
+	if file.IsLink {
+		linkTarget, err := os.Readlink(path)
+		if err == nil {
+			file.LinkTarget = linkTarget
 		}
 	}
 
-	columns := width / (maxWidth + 2) // +2 for spacing between columns
-	if columns == 0 {
-		columns = 1
+	if stat, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
+		file.Nlink = stat.Nlink
+		file.Uid = stat.Uid
+		file.Gid = stat.Gid
+		file.Rdev = stat.Rdev
 	}
 
-	rows := (len(files) + columns - 1) / columns
+	if options.LongFormat {
+		printLongFormat([]FileInfo{file})
+	} else {
+		fmt.Println(formatFileName(file))
+	}
+}
 
-	for row := 0; row < rows; row++ {
-		for col := 0; col < columns; col++ {
-			index := col*rows + row
-			if index < len(files) {
-				fmt.Printf("%-*s", maxWidth+2, files[index].Name)
+func readDir(path string, options Options) ([]FileInfo, error) {
+	dir, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer dir.Close()
+
+	entries, err := dir.ReadDir(-1)
+	if err != nil {
+		return nil, err
+	}
+
+	files := make([]FileInfo, 0, len(entries))
+
+	if options.ShowHidden {
+		addSpecialEntry(path, ".", &files)
+		parentPath := filepath.Dir(path)
+		addSpecialEntry(parentPath, "..", &files)
+	}
+
+	for _, entry := range entries {
+		if !options.ShowHidden && strings.HasPrefix(entry.Name(), ".") {
+			continue
+		}
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		fileInfo := createFileInfo(path, info)
+		files = append(files, fileInfo)
+	}
+
+	sortFiles(files, options)
+	return files, nil
+}
+
+func createFileInfo(path string, info os.FileInfo) FileInfo {
+	fileInfo := FileInfo{
+		Name:    info.Name(),
+		Size:    info.Size(),
+		Mode:    info.Mode(),
+		ModTime: info.ModTime(),
+		IsDir:   info.IsDir(),
+		IsLink:  info.Mode()&os.ModeSymlink != 0,
+	}
+
+	if fileInfo.IsLink {
+		linkTarget, err := os.Readlink(filepath.Join(path, info.Name()))
+		if err == nil {
+			fileInfo.LinkTarget = linkTarget
+		}
+	}
+
+	if stat, ok := info.Sys().(*syscall.Stat_t); ok {
+		fileInfo.Nlink = stat.Nlink
+		fileInfo.Uid = stat.Uid
+		fileInfo.Gid = stat.Gid
+		fileInfo.Rdev = stat.Rdev
+		fileInfo.Blocks = stat.Blocks
+	}
+
+	return fileInfo
+}
+
+func addSpecialEntry(path, name string, files *[]FileInfo) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	fileInfo := createFileInfo(filepath.Dir(path), info)
+	fileInfo.Name = name
+	*files = append(*files, fileInfo)
+}
+
+func sortFiles(files []FileInfo, options Options) {
+	sort.Slice(files, func(i, j int) bool {
+		if options.SortByTime {
+			if files[i].ModTime.Equal(files[j].ModTime) {
+				return strings.ToLower(files[i].Name) < strings.ToLower(files[j].Name)
+			}
+			return files[i].ModTime.After(files[j].ModTime)
+		} else if options.SortBySize {
+			if files[i].Size == files[j].Size {
+				return strings.ToLower(files[i].Name) < strings.ToLower(files[j].Name)
+			}
+			return files[i].Size > files[j].Size
+		}
+		return compareFilenames(files[i].Name, files[j].Name)
+	})
+
+	if options.Reverse {
+		for i := 0; i < len(files)/2; i++ {
+			files[i], files[len(files)-1-i] = files[len(files)-1-i], files[i]
+		}
+	}
+}
+
+func compareFilenames(a, b string) bool {
+	aLower, bLower := strings.ToLower(a), strings.ToLower(b)
+	if aLower != bLower {
+		return aLower < bLower
+	}
+	return a < b
+}
+
+func formatFileName(file FileInfo) string {
+	name := colorize(file, file.Name)
+	if file.IsLink {
+		name += " -> " + file.LinkTarget
+	}
+	return name
+}
+
+func colorize(file FileInfo, name string) string {
+	var color string
+	bold := "\033[1m"
+
+	if file.IsDir {
+		color = ColorBlue
+	} else if file.IsLink {
+		color = ColorCyan
+	} else if file.Mode&0o111 != 0 {
+		color = ColorGreen
+	} else if file.Mode&os.ModeNamedPipe != 0 {
+		color = ColorYellow
+	} else if file.Mode&os.ModeSocket != 0 {
+		color = ColorMagenta
+	} else if file.Mode&os.ModeDevice != 0 {
+		color = ColorYellow
+	} else {
+		return name
+	}
+
+	return bold + color + name + ColorReset
+}
+
+func parseFlags() (Options, []string) {
+	var options Options
+	args := os.Args[1:]
+	var dirs []string
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if strings.HasPrefix(arg, "-") && len(arg) > 1 && arg != "--" {
+			for _, flag := range arg[1:] {
+				switch flag {
+				case 'l':
+					options.LongFormat = true
+				case 'R':
+					options.Recursive = true
+				case 'a':
+					options.ShowHidden = true
+				case 'r':
+					options.Reverse = true
+				case 't':
+					options.SortByTime = true
+				case 'S':
+					options.SortBySize = true
+				case '1':
+					options.OnePerLine = true
+				default:
+					fmt.Printf("ls: invalid option -- '%c'\n", flag)
+					os.Exit(1)
+				}
+			}
+		} else if arg == "--" {
+			dirs = append(dirs, args[i+1:]...)
+			break
+		} else {
+			dirs = append(dirs, arg)
+		}
+	}
+
+	return options, dirs
+}
+
+func listRecursive(path string, options Options) {
+	filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			fmt.Printf("ls: cannot access '%s': %v\n", p, err)
+			return nil
+		}
+		if d.IsDir() {
+			if p != path {
+				fmt.Printf("\n%s:\n", p)
+			}
+			files, err := readDir(p, options)
+			if err != nil {
+				fmt.Printf("ls: cannot access '%s': %v\n", p, err)
+				return nil
+			}
+			printFiles(files, options)
+		}
+		return nil
+	})
+}
+
+func listDir(path string, options Options) {
+	files, err := readDir(path, options)
+	if err != nil {
+		fmt.Printf("ls: cannot access '%s': %v\n", path, err)
+		return
+	}
+	printFiles(files, options)
+}
+
+func printFiles(files []FileInfo, options Options) {
+	if options.LongFormat {
+		printLongFormat(files)
+	} else if options.OnePerLine {
+		for _, file := range files {
+			fmt.Println(formatFileName(file))
+		}
+	} else {
+		printColumnar(files)
+	}
+}
+
+func formatFileMode(mode os.FileMode) string {
+	var result strings.Builder
+
+	// File type
+	switch {
+	case mode&os.ModeDir != 0:
+		result.WriteRune('d')
+	case mode&os.ModeSymlink != 0:
+		result.WriteRune('l')
+	case mode&os.ModeDevice != 0:
+		if mode&os.ModeCharDevice != 0 {
+			result.WriteRune('c')
+		} else {
+			result.WriteRune('b')
+		}
+	case mode&os.ModeNamedPipe != 0:
+		result.WriteRune('p')
+	case mode&os.ModeSocket != 0:
+		result.WriteRune('s')
+	default:
+		result.WriteRune('-')
+	}
+
+	// Permission bits
+	result.WriteString(formatPermissions(mode))
+
+	return result.String()
+}
+
+func formatPermissions(mode os.FileMode) string {
+	const rwx = "rwxrwxrwx"
+	// Initialize a byte slice with default permissions '-'
+	perm := []byte("---------")
+
+	// Set the rwx permissions based on the mode
+	for i := 0; i < 9; i++ {
+		if mode&(1<<uint(8-i)) != 0 {
+			perm[i] = rwx[i]
+		}
+	}
+
+	// Handle special permission bits
+	if mode&os.ModeSetuid != 0 {
+		if perm[2] == 'x' {
+			perm[2] = 's'
+		} else {
+			perm[2] = 'S'
+		}
+	}
+	if mode&os.ModeSetgid != 0 {
+		if perm[5] == 'x' {
+			perm[5] = 's'
+		} else {
+			perm[5] = 'S'
+		}
+	}
+	if mode&os.ModeSticky != 0 {
+		if perm[8] == 'x' {
+			perm[8] = 't'
+		} else {
+			perm[8] = 'T'
+		}
+	}
+
+	return string(perm)
+}
+
+func printLongFormat(files []FileInfo) {
+	var totalBlocks int64
+	for _, file := range files {
+		totalBlocks += file.Blocks
+	}
+	fmt.Printf("total %d\n", totalBlocks/2)
+
+	maxNlinkWidth := 0
+	maxUserWidth := 0
+	maxGroupWidth := 0
+	maxSizeWidth := 0
+	maxMajorWidth := 0
+	maxMinorWidth := 0
+
+	for _, file := range files {
+		nlinkWidth := len(fmt.Sprintf("%d", file.Nlink))
+		if nlinkWidth > maxNlinkWidth {
+			maxNlinkWidth = nlinkWidth
+		}
+
+		usr, _ := user.LookupId(fmt.Sprint(file.Uid))
+		userWidth := len(usr.Username)
+		if userWidth > maxUserWidth {
+			maxUserWidth = userWidth
+		}
+
+		grp, _ := user.LookupGroupId(fmt.Sprint(file.Gid))
+		groupWidth := len(grp.Name)
+		if groupWidth > maxGroupWidth {
+			maxGroupWidth = groupWidth
+		}
+
+		if file.Mode&os.ModeDevice != 0 {
+			major := unix.Major(file.Rdev)
+			minor := unix.Minor(file.Rdev)
+			majorWidth := len(fmt.Sprintf("%d", major))
+			minorWidth := len(fmt.Sprintf("%d", minor))
+			if majorWidth > maxMajorWidth {
+				maxMajorWidth = majorWidth
+			}
+			if minorWidth > maxMinorWidth {
+				maxMinorWidth = minorWidth
+			}
+		} else {
+			sizeWidth := len(fmt.Sprintf("%d", file.Size))
+			if sizeWidth > maxSizeWidth {
+				maxSizeWidth = sizeWidth
+			}
+		}
+	}
+
+	for _, file := range files {
+		usr, _ := user.LookupId(fmt.Sprint(file.Uid))
+		grp, _ := user.LookupGroupId(fmt.Sprint(file.Gid))
+
+		modeStr := formatFileMode(file.Mode)
+
+		size := ""
+		if file.Mode&os.ModeDevice != 0 {
+			major := unix.Major(file.Rdev)
+			minor := unix.Minor(file.Rdev)
+			size = fmt.Sprintf("%*d, %*d", maxMajorWidth, major, maxMinorWidth, minor)
+		} else {
+			size = fmt.Sprintf("%*d", maxSizeWidth, file.Size)
+		}
+
+		fileName := formatFileName(file)
+		if file.IsLink {
+			fileName += " -> " + file.LinkTarget
+		}
+
+		timeFormat := "Jan _2 15:04"
+		if time.Now().Year() != file.ModTime.Year() {
+			timeFormat = "Jan _2  2006"
+		}
+
+		fmt.Printf("%s %*d %-*s %-*s %*s %s %s\n",
+			modeStr,
+			maxNlinkWidth, file.Nlink,
+			maxUserWidth, usr.Username,
+			maxGroupWidth, grp.Name,
+			maxSizeWidth+maxMajorWidth+maxMinorWidth, size,
+			file.ModTime.Format(timeFormat),
+			fileName,
+		)
+	}
+}
+
+func printColumnar(files []FileInfo) {
+	termWidth := getTerminalWidth()
+
+	maxWidth := 0
+	for _, file := range files {
+		width := len(formatFileName(file))
+		if width > maxWidth {
+			maxWidth = width
+		}
+	}
+
+	colWidth := maxWidth + 2
+	numCols := termWidth / colWidth
+	if numCols == 0 {
+		numCols = 1
+	}
+
+	numRows := int(math.Ceil(float64(len(files)) / float64(numCols)))
+
+	for i := 0; i < numRows; i++ {
+		for j := 0; j < numCols; j++ {
+			idx := j*numRows + i
+			if idx < len(files) {
+				fmt.Printf("%-*s", colWidth, formatFileName(files[idx]))
 			}
 		}
 		fmt.Println()
 	}
+}
+
+func getTerminalWidth() int {
+	defaultWidth := 80
+
+	// Try to get the terminal size using TIOCGWINSZ ioctl
+	var size [4]uint16
+	if _, _, err := syscall.Syscall(syscall.SYS_IOCTL,
+		uintptr(syscall.Stdin),
+		uintptr(syscall.TIOCGWINSZ),
+		uintptr(unsafe.Pointer(&size))); err == 0 {
+		return int(size[1])
+	}
+
+	// If ioctl fails, try to get the COLUMNS environment variable
+	if cols := os.Getenv("COLUMNS"); cols != "" {
+		if width, err := strconv.Atoi(cols); err == nil {
+			return width
+		}
+	}
+
+	// If all else fails, return the default width
+	return defaultWidth
 }
