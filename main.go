@@ -478,7 +478,8 @@ func printLongFormat(files []FileInfo) {
 		}
 
 		timeFormat := "Jan _2 15:04"
-		if time.Now().Year() != file.ModTime.Year() {
+		sixMonthsAgo := time.Now().AddDate(0, -6, 0)
+		if file.ModTime.Before(sixMonthsAgo) {
 			timeFormat = "Jan _2  2006"
 		}
 
