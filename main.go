@@ -25,6 +25,7 @@ type Options struct {
 	SortByTime bool
 	SortBySize bool
 	OnePerLine bool
+	NoColor    bool
 }
 
 type FileInfo struct {
@@ -43,15 +44,29 @@ type FileInfo struct {
 }
 
 const (
-	ColorBlue    = "\033[34m"
-	ColorCyan    = "\033[36m"
-	ColorGreen   = "\033[32m"
-	ColorMagenta = "\033[35m"
-	ColorYellow  = "\033[33m"
-	ColorReset   = "\033[0m"
+	ColorReset = "\033[0m"
 )
 
+var colorMap map[string]string
+
+func initColorMap() {
+	colorMap = make(map[string]string)
+	lsColors := os.Getenv("LS_COLORS")
+	if lsColors == "" {
+		return
+	}
+
+	pairs := strings.Split(lsColors, ":")
+	for _, pair := range pairs {
+		parts := strings.Split(pair, "=")
+		if len(parts) == 2 {
+			colorMap[parts[0]] = "\033[" + parts[1] + "m"
+		}
+	}
+}
+
 func main() {
+	initColorMap()
 	options, args := parseFlags()
 
 	if len(args) == 0 {
@@ -115,9 +130,9 @@ func listSingleFile(path string, options Options) {
 	}
 
 	if options.LongFormat {
-		printLongFormat([]FileInfo{file})
+		printLongFormat([]FileInfo{file}, options)
 	} else {
-		fmt.Println(formatFileName(file))
+		fmt.Println(formatFileName(file, options))
 	}
 }
 
@@ -226,8 +241,11 @@ func compareFilenames(a, b string) bool {
 	return a < b
 }
 
-func formatFileName(file FileInfo) string {
-	name := colorize(file, file.Name)
+func formatFileName(file FileInfo, options Options) string {
+	name := file.Name
+	if !options.NoColor {
+		name = colorize(file, name)
+	}
 	if file.IsLink {
 		name += " -> " + file.LinkTarget
 	}
@@ -235,26 +253,32 @@ func formatFileName(file FileInfo) string {
 }
 
 func colorize(file FileInfo, name string) string {
-	var color string
-	bold := "\033[1m"
+	var colorCode string
 
 	if file.IsDir {
-		color = ColorBlue
+		colorCode = colorMap["di"]
 	} else if file.IsLink {
-		color = ColorCyan
+		colorCode = colorMap["ln"]
 	} else if file.Mode&0o111 != 0 {
-		color = ColorGreen
+		colorCode = colorMap["ex"]
 	} else if file.Mode&os.ModeNamedPipe != 0 {
-		color = ColorYellow
+		colorCode = colorMap["pi"]
 	} else if file.Mode&os.ModeSocket != 0 {
-		color = ColorMagenta
+		colorCode = colorMap["so"]
 	} else if file.Mode&os.ModeDevice != 0 {
-		color = ColorYellow
+		colorCode = colorMap["bd"]
 	} else {
+		ext := filepath.Ext(name)
+		if ext != "" {
+			colorCode = colorMap["*"+ext]
+		}
+	}
+
+	if colorCode == "" {
 		return name
 	}
 
-	return bold + color + name + ColorReset
+	return colorCode + name + ColorReset
 }
 
 func parseFlags() (Options, []string) {
@@ -281,6 +305,8 @@ func parseFlags() (Options, []string) {
 					options.SortBySize = true
 				case '1':
 					options.OnePerLine = true
+				case 'G':
+					options.NoColor = true
 				default:
 					fmt.Printf("ls: invalid option -- '%c'\n", flag)
 					os.Exit(1)
@@ -329,13 +355,13 @@ func listDir(path string, options Options) {
 
 func printFiles(files []FileInfo, options Options) {
 	if options.LongFormat {
-		printLongFormat(files)
+		printLongFormat(files, options)
 	} else if options.OnePerLine {
 		for _, file := range files {
-			fmt.Println(formatFileName(file))
+			fmt.Println(formatFileName(file, options))
 		}
 	} else {
-		printColumnar(files)
+		printColumnar(files, options)
 	}
 }
 
@@ -370,17 +396,14 @@ func formatFileMode(mode os.FileMode) string {
 
 func formatPermissions(mode os.FileMode) string {
 	const rwx = "rwxrwxrwx"
-	// Initialize a byte slice with default permissions '-'
 	perm := []byte("---------")
 
-	// Set the rwx permissions based on the mode
 	for i := 0; i < 9; i++ {
 		if mode&(1<<uint(8-i)) != 0 {
 			perm[i] = rwx[i]
 		}
 	}
 
-	// Handle special permission bits
 	if mode&os.ModeSetuid != 0 {
 		if perm[2] == 'x' {
 			perm[2] = 's'
@@ -406,7 +429,7 @@ func formatPermissions(mode os.FileMode) string {
 	return string(perm)
 }
 
-func printLongFormat(files []FileInfo) {
+func printLongFormat(files []FileInfo, options Options) {
 	var totalBlocks int64
 	for _, file := range files {
 		totalBlocks += file.Blocks
@@ -472,10 +495,7 @@ func printLongFormat(files []FileInfo) {
 			size = fmt.Sprintf("%*d", maxSizeWidth, file.Size)
 		}
 
-		fileName := formatFileName(file)
-		if file.IsLink {
-			fileName += " -> " + file.LinkTarget
-		}
+		fileName := formatFileName(file, options)
 
 		timeFormat := "Jan _2 15:04"
 		sixMonthsAgo := time.Now().AddDate(0, -6, 0)
@@ -495,12 +515,12 @@ func printLongFormat(files []FileInfo) {
 	}
 }
 
-func printColumnar(files []FileInfo) {
+func printColumnar(files []FileInfo, options Options) {
 	termWidth := getTerminalWidth()
 
 	maxWidth := 0
 	for _, file := range files {
-		width := len(formatFileName(file))
+		width := len(formatFileName(file, options))
 		if width > maxWidth {
 			maxWidth = width
 		}
@@ -518,7 +538,7 @@ func printColumnar(files []FileInfo) {
 		for j := 0; j < numCols; j++ {
 			idx := j*numRows + i
 			if idx < len(files) {
-				fmt.Printf("%-*s", colWidth, formatFileName(files[idx]))
+				fmt.Printf("%-*s", colWidth, formatFileName(files[idx], options))
 			}
 		}
 		fmt.Println()
@@ -528,7 +548,6 @@ func printColumnar(files []FileInfo) {
 func getTerminalWidth() int {
 	defaultWidth := 80
 
-	// Try to get the terminal size using TIOCGWINSZ ioctl
 	var size [4]uint16
 	if _, _, err := syscall.Syscall(syscall.SYS_IOCTL,
 		uintptr(syscall.Stdin),
@@ -537,13 +556,11 @@ func getTerminalWidth() int {
 		return int(size[1])
 	}
 
-	// If ioctl fails, try to get the COLUMNS environment variable
 	if cols := os.Getenv("COLUMNS"); cols != "" {
 		if width, err := strconv.Atoi(cols); err == nil {
 			return width
 		}
 	}
 
-	// If all else fails, return the default width
 	return defaultWidth
 }
