@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	FI "my-ls-1/pkg/fileinfo"
+	OP "my-ls-1/pkg/options"
 )
 
 const (
@@ -59,7 +60,7 @@ func Colorize(file FI.FileInfo, name string) string {
 	return colorCode + name + ColorReset
 }
 
-func FormatFileName(file FI.FileInfo, options FI.Options) string {
+func FormatFileName(file FI.FileInfo, options OP.Options) string {
 	name := file.Name
 	if !options.NoColor {
 		name = Colorize(file, name)
