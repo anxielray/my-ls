@@ -13,8 +13,8 @@ import (
 
 	T "my-ls-1/cmd/terminal"
 	FI "my-ls-1/pkg/fileinfo"
-	OP "my-ls-1/pkg/options"
 	C "my-ls-1/pkg/utils/color"
+	OP "my-ls-1/pkg/options"
 
 	"golang.org/x/sys/unix"
 )
