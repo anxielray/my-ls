@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unicode"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -213,32 +214,90 @@ func addSpecialEntry(path, name string, files *[]FileInfo) {
 func sortFiles(files []FileInfo, options Options) {
 	sort.Slice(files, func(i, j int) bool {
 		if options.SortByTime {
-			if files[i].ModTime.Equal(files[j].ModTime) {
-				return strings.ToLower(files[i].Name) < strings.ToLower(files[j].Name)
+			if !files[i].ModTime.Equal(files[j].ModTime) {
+				return files[i].ModTime.After(files[j].ModTime)
 			}
-			return files[i].ModTime.After(files[j].ModTime)
 		} else if options.SortBySize {
-			if files[i].Size == files[j].Size {
-				return strings.ToLower(files[i].Name) < strings.ToLower(files[j].Name)
+			if files[i].Size != files[j].Size {
+				return files[i].Size > files[j].Size
 			}
-			return files[i].Size > files[j].Size
 		}
-		return compareFilenames(files[i].Name, files[j].Name)
+
+		return compareFilenamesAlphanumeric(files[i].Name, files[j].Name)
 	})
 
 	if options.Reverse {
-		for i := 0; i < len(files)/2; i++ {
-			files[i], files[len(files)-1-i] = files[len(files)-1-i], files[i]
-		}
+		reverseSlice(files)
 	}
 }
 
-func compareFilenames(a, b string) bool {
-	aLower, bLower := strings.ToLower(a), strings.ToLower(b)
-	if aLower != bLower {
-		return aLower < bLower
+func compareFilenamesAlphanumeric(a, b string) bool {
+	aRunes := []rune(a)
+	bRunes := []rune(b)
+	aLen := len(aRunes)
+	bLen := len(bRunes)
+
+	for i, j := 0, 0; i < aLen && j < bLen; {
+		// Skip non-alphanumeric characters
+		for i < aLen && !isAlphanumeric(aRunes[i]) {
+			i++
+		}
+		for j < bLen && !isAlphanumeric(bRunes[j]) {
+			j++
+		}
+
+		// If we've reached the end of either string, compare lengths
+		if i == aLen || j == bLen {
+			return aLen < bLen
+		}
+
+		// If both characters are digits, compare the whole number
+		if unicode.IsDigit(aRunes[i]) && unicode.IsDigit(bRunes[j]) {
+			aNum, aEnd := extractNumber(aRunes[i:])
+			bNum, bEnd := extractNumber(bRunes[j:])
+
+			if aNum != bNum {
+				return aNum < bNum
+			}
+
+			i += aEnd
+			j += bEnd
+		} else {
+			// Compare characters case-insensitively
+			aLower := unicode.ToLower(aRunes[i])
+			bLower := unicode.ToLower(bRunes[j])
+			if aLower != bLower {
+				return aLower < bLower
+			}
+			i++
+			j++
+		}
 	}
-	return a < b
+
+	// If all compared characters are the same, shorter string comes first
+	return aLen < bLen
+}
+
+func isAlphanumeric(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r)
+}
+
+func extractNumber(runes []rune) (int, int) {
+	num := 0
+	i := 0
+	for i < len(runes) && unicode.IsDigit(runes[i]) {
+		digit, _ := strconv.Atoi(string(runes[i]))
+		num = num*10 + digit
+		i++
+	}
+	return num, i
+}
+
+func reverseSlice(slice []FileInfo) {
+	for i := 0; i < len(slice)/2; i++ {
+		j := len(slice) - 1 - i
+		slice[i], slice[j] = slice[j], slice[i]
+	}
 }
 
 func formatFileName(file FileInfo, options Options) string {
