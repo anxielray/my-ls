@@ -8,7 +8,6 @@ import (
 	S "my-ls-1/internal/sort"
 	FI "my-ls-1/pkg/fileinfo"
 	OP "my-ls-1/pkg/options"
-	U "my-ls-1/pkg/utils"
 )
 
 func ReadDir(path string, options OP.Options) ([]FI.FileInfo, error) {
@@ -26,9 +25,9 @@ func ReadDir(path string, options OP.Options) ([]FI.FileInfo, error) {
 	files := make([]FI.FileInfo, 0, len(entries))
 
 	if options.ShowHidden {
-		U.AddSpecialEntry(path, ".", &files)
+		AddSpecialEntry(path, ".", &files)
 		parentPath := filepath.Dir(path)
-		U.AddSpecialEntry(parentPath, "..", &files)
+		AddSpecialEntry(parentPath, "..", &files)
 	}
 
 	for _, entry := range entries {
@@ -45,4 +44,14 @@ func ReadDir(path string, options OP.Options) ([]FI.FileInfo, error) {
 
 	S.SortFiles(files, options)
 	return files, nil
+}
+
+func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	fileInfo := FI.CreateFileInfo(filepath.Dir(path), info)
+	fileInfo.Name = name
+	*files = append(*files, fileInfo)
 }
