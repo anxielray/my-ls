@@ -2,5 +2,7 @@
 
 cd cmd
 cd ls
-go run . "$1" "../../$2"
+go  build -o my-ls
+mv my-ls ../../
+
 
