@@ -5,94 +5,14 @@ import (
 	"math"
 	"os"
 	"os/user"
-	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
-	"unicode"
 
 	T "my-ls-1/cmd/terminal"
 	FI "my-ls-1/pkg/fileinfo"
-	C "my-ls-1/pkg/utils/color"
 	OP "my-ls-1/pkg/options"
 
 	"golang.org/x/sys/unix"
 )
-
-func FormatFileName(file FI.FileInfo, options OP.Options) string {
-	name := file.Name
-	if !options.NoColor {
-		name = C.Colorize(file, name)
-	}
-	if file.IsLink {
-		name += " -> " + file.LinkTarget
-	}
-	return name
-}
-
-func FormatPermissions(mode os.FileMode) string {
-	const rwx = "rwxrwxrwx"
-	perm := []byte("---------")
-
-	for i := 0; i < 9; i++ {
-		if mode&(1<<uint(8-i)) != 0 {
-			perm[i] = rwx[i]
-		}
-	}
-
-	if mode&os.ModeSetuid != 0 {
-		if perm[2] == 'x' {
-			perm[2] = 's'
-		} else {
-			perm[2] = 'S'
-		}
-	}
-	if mode&os.ModeSetgid != 0 {
-		if perm[5] == 'x' {
-			perm[5] = 's'
-		} else {
-			perm[5] = 'S'
-		}
-	}
-	if mode&os.ModeSticky != 0 {
-		if perm[8] == 'x' {
-			perm[8] = 't'
-		} else {
-			perm[8] = 'T'
-		}
-	}
-
-	return string(perm)
-}
-
-func FormatFileMode(mode os.FileMode) string {
-	var result strings.Builder
-
-	// File type
-	switch {
-	case mode&os.ModeDir != 0:
-		result.WriteRune('d')
-	case mode&os.ModeSymlink != 0:
-		result.WriteRune('l')
-	case mode&os.ModeDevice != 0:
-		if mode&os.ModeCharDevice != 0 {
-			result.WriteRune('c')
-		} else {
-			result.WriteRune('b')
-		}
-	case mode&os.ModeNamedPipe != 0:
-		result.WriteRune('p')
-	case mode&os.ModeSocket != 0:
-		result.WriteRune('s')
-	default:
-		result.WriteRune('-')
-	}
-
-	// Permission bits
-	result.WriteString(FormatPermissions(mode))
-
-	return result.String()
-}
 
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 	var totalBlocks int64
@@ -210,21 +130,6 @@ func PrintColumnar(files []FI.FileInfo, options OP.Options) {
 	}
 }
 
-func IsAlphanumeric(r rune) bool {
-	return unicode.IsLetter(r) || unicode.IsDigit(r)
-}
-
-func ExtractNumber(runes []rune) (int, int) {
-	num := 0
-	i := 0
-	for i < len(runes) && unicode.IsDigit(runes[i]) {
-		digit, _ := strconv.Atoi(string(runes[i]))
-		num = num*10 + digit
-		i++
-	}
-	return num, i
-}
-
 func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	if options.LongFormat {
 		PrintLongFormat(files, options)
@@ -235,61 +140,4 @@ func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	} else {
 		PrintColumnar(files, options)
 	}
-}
-
-func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return
-	}
-	fileInfo := FI.CreateFileInfo(filepath.Dir(path), info)
-	fileInfo.Name = name
-	*files = append(*files, fileInfo)
-}
-
-func CompareFilenamesAlphanumeric(a, b string) bool {
-	aRunes := []rune(a)
-	bRunes := []rune(b)
-	aLen := len(aRunes)
-	bLen := len(bRunes)
-
-	for i, j := 0, 0; i < aLen && j < bLen; {
-		// Skip non-alphanumeric characters
-		for i < aLen && !IsAlphanumeric(aRunes[i]) {
-			i++
-		}
-		for j < bLen && !IsAlphanumeric(bRunes[j]) {
-			j++
-		}
-
-		// If we've reached the end of either string, compare lengths
-		if i == aLen || j == bLen {
-			return aLen < bLen
-		}
-
-		// If both characters are digits, compare the whole number
-		if unicode.IsDigit(aRunes[i]) && unicode.IsDigit(bRunes[j]) {
-			aNum, aEnd := ExtractNumber(aRunes[i:])
-			bNum, bEnd := ExtractNumber(bRunes[j:])
-
-			if aNum != bNum {
-				return aNum < bNum
-			}
-
-			i += aEnd
-			j += bEnd
-		} else {
-			// Compare characters case-insensitively
-			aLower := unicode.ToLower(aRunes[i])
-			bLower := unicode.ToLower(bRunes[j])
-			if aLower != bLower {
-				return aLower < bLower
-			}
-			i++
-			j++
-		}
-	}
-
-	// If all compared characters are the same, shorter string comes first
-	return aLen < bLen
 }
