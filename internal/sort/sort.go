@@ -2,10 +2,11 @@ package sort
 
 import (
 	"sort"
+	"strconv"
+	"unicode"
 
 	FI "my-ls-1/pkg/fileinfo"
 	OP "my-ls-1/pkg/options"
-	U "my-ls-1/pkg/utils"
 )
 
 func SortFiles(files []FI.FileInfo, options OP.Options) {
@@ -20,7 +21,7 @@ func SortFiles(files []FI.FileInfo, options OP.Options) {
 			}
 		}
 
-		return U.CompareFilenamesAlphanumeric(files[i].Name, files[j].Name)
+		return CompareFilenamesAlphanumeric(files[i].Name, files[j].Name)
 	})
 
 	if options.Reverse {
@@ -33,4 +34,66 @@ func ReverseSlice(slice []FI.FileInfo) {
 		j := len(slice) - 1 - i
 		slice[i], slice[j] = slice[j], slice[i]
 	}
+}
+
+func CompareFilenamesAlphanumeric(a, b string) bool {
+	aRunes := []rune(a)
+	bRunes := []rune(b)
+	aLen := len(aRunes)
+	bLen := len(bRunes)
+
+	for i, j := 0, 0; i < aLen && j < bLen; {
+		// Skip non-alphanumeric characters
+		for i < aLen && !IsAlphanumeric(aRunes[i]) {
+			i++
+		}
+		for j < bLen && !IsAlphanumeric(bRunes[j]) {
+			j++
+		}
+
+		// If we've reached the end of either string, compare lengths
+		if i == aLen || j == bLen {
+			return aLen < bLen
+		}
+
+		// If both characters are digits, compare the whole number
+		if unicode.IsDigit(aRunes[i]) && unicode.IsDigit(bRunes[j]) {
+			aNum, aEnd := ExtractNumber(aRunes[i:])
+			bNum, bEnd := ExtractNumber(bRunes[j:])
+
+			if aNum != bNum {
+				return aNum < bNum
+			}
+
+			i += aEnd
+			j += bEnd
+		} else {
+			// Compare characters case-insensitively
+			aLower := unicode.ToLower(aRunes[i])
+			bLower := unicode.ToLower(bRunes[j])
+			if aLower != bLower {
+				return aLower < bLower
+			}
+			i++
+			j++
+		}
+	}
+
+	// If all compared characters are the same, shorter string comes first
+	return aLen < bLen
+}
+
+func IsAlphanumeric(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsDigit(r)
+}
+
+func ExtractNumber(runes []rune) (int, int) {
+	num := 0
+	i := 0
+	for i < len(runes) && unicode.IsDigit(runes[i]) {
+		digit, _ := strconv.Atoi(string(runes[i]))
+		num = num*10 + digit
+		i++
+	}
+	return num, i
 }
