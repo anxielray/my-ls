@@ -13,10 +13,8 @@ import (
 )
 
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
-	var totalBlocks int64
-	for _, file := range files {
-		totalBlocks += file.Blocks
-	}
+	path, _ := os.Getwd();
+	totalBlocks, _ := calculateTotalBlocks(path)
 	fmt.Printf("total %d\n", totalBlocks/2)
 
 	maxNlinkWidth := 0
