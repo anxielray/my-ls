@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"os/user"
+	"strings"
 	"time"
 
 	T "my-ls-1/cmd/terminal"
@@ -13,9 +14,25 @@ import (
 )
 
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
-	path, _ := os.Getwd();
-	totalBlocks, _ := calculateTotalBlocks(path)
-	fmt.Printf("total %d\n", totalBlocks/2)
+	if len(os.Args) == 3 {
+		//check for the path to display size
+		for _, arg := range os.Args[1:] {
+			if strings.HasPrefix(arg, "-") {
+				continue
+			} else {
+				file, _ := checkPathType(arg)
+				if file == "directory" {
+					totalBlocks, _ := calculateTotalBlocks(arg)
+					fmt.Printf("total %d\n", totalBlocks/2)
+				}
+			}
+		}
+	} else if len(os.Args) == 2 {
+		println("Checking")
+		path, _ := os.Getwd()
+		totalBlocks, _ := calculateTotalBlocks(path)
+		fmt.Printf("total %d\n", totalBlocks/2)
+	}
 
 	maxNlinkWidth := 0
 	maxUserWidth := 0
