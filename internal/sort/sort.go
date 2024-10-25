@@ -3,7 +3,6 @@ package sort
 import (
 	"sort"
 	"strconv"
-	"unicode"
 
 	FI "my-ls-1/pkg/fileinfo"
 	OP "my-ls-1/pkg/options"
@@ -57,7 +56,7 @@ func CompareFilenamesAlphanumeric(a, b string) bool {
 		}
 
 		// If both characters are digits, compare the whole number
-		if unicode.IsDigit(aRunes[i]) && unicode.IsDigit(bRunes[j]) {
+		if IsDigit(aRunes[i]) && IsDigit(bRunes[j]) {
 			aNum, aEnd := ExtractNumber(aRunes[i:])
 			bNum, bEnd := ExtractNumber(bRunes[j:])
 
@@ -69,8 +68,8 @@ func CompareFilenamesAlphanumeric(a, b string) bool {
 			j += bEnd
 		} else {
 			// Compare characters case-insensitively
-			aLower := unicode.ToLower(aRunes[i])
-			bLower := unicode.ToLower(bRunes[j])
+			aLower := ToLower(aRunes[i])
+			bLower := ToLower(bRunes[j])
 			if aLower != bLower {
 				return aLower < bLower
 			}
@@ -84,16 +83,31 @@ func CompareFilenamesAlphanumeric(a, b string) bool {
 }
 
 func IsAlphanumeric(r rune) bool {
-	return unicode.IsLetter(r) || unicode.IsDigit(r)
+	return IsLetter(r) || IsDigit(r)
 }
 
 func ExtractNumber(runes []rune) (int, int) {
 	num := 0
 	i := 0
-	for i < len(runes) && unicode.IsDigit(runes[i]) {
+	for i < len(runes) && IsDigit(runes[i]) {
 		digit, _ := strconv.Atoi(string(runes[i]))
 		num = num*10 + digit
 		i++
 	}
 	return num, i
+}
+
+func IsDigit(r rune) bool {
+	return (r >= '0' && r <= '9')
+}
+
+func ToLower( r rune) rune {
+	if (r >= 'A' && r <= 'Z'){
+		r  = r + ('a'- 'A')
+	}
+	return r
+}
+
+func IsLetter(r rune) bool {
+	return ((r >= 'A' && r <= 'Z')|| (r >= 'a' && r <= 'z') )
 }
