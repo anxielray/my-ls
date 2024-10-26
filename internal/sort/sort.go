@@ -85,7 +85,6 @@ func CompareFilenamesAlphanumeric(a, b string) bool {
 // IsAlphanumeric checks if a rune is a letter (A-Z, a-z) or a digit (0-9).
 func IsAlphanumeric(r rune) bool {
 	return IsLetter(r) || IsDigit(r)
-	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')
 }
 
 func ExtractNumber(runes []rune) (int, int) {
@@ -105,22 +104,11 @@ func IsDigit(r rune) bool {
 
 func ToLower(r rune) rune {
 	if r >= 'A' && r <= 'Z' {
-		return r + ('a' - 'A')
-	}
-	return r
-}
-
-func IsDigit(r rune) bool {
-	return (r >= '0' && r <= '9')
-}
-
-func ToLower( r rune) rune {
-	if (r >= 'A' && r <= 'Z'){
-		r  = r + ('a'- 'A')
+		r = r + ('a' - 'A')
 	}
 	return r
 }
 
 func IsLetter(r rune) bool {
-	return ((r >= 'A' && r <= 'Z')|| (r >= 'a' && r <= 'z') )
+	return ((r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z'))
 }
