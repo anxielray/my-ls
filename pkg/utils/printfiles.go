@@ -61,8 +61,13 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 		}
 
 		if file.Mode&os.ModeDevice != 0 {
+<<<<<<< HEAD
 			major := Major(file.Rdev)
 			minor := Minor(file.Rdev)
+=======
+			major := getMajor(file.Rdev)
+			minor := getMinor(file.Rdev)
+>>>>>>> f890526 ([Update]: Update the file without the third party packages  implementing the functions from the package)
 			majorWidth := len(fmt.Sprintf("%d", major))
 			minorWidth := len(fmt.Sprintf("%d", minor))
 			if majorWidth > maxMajorWidth {
@@ -87,8 +92,13 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 
 		size := ""
 		if file.Mode&os.ModeDevice != 0 {
+<<<<<<< HEAD
 			major := Major(file.Rdev)
 			minor := Minor(file.Rdev)
+=======
+			major := getMajor(file.Rdev)
+			minor := getMinor(file.Rdev)
+>>>>>>> f890526 ([Update]: Update the file without the third party packages  implementing the functions from the package)
 			size = fmt.Sprintf("%*d, %*d", maxMajorWidth, major, maxMinorWidth, minor)
 		} else {
 			size = fmt.Sprintf("%*d", maxSizeWidth, file.Size)
@@ -156,6 +166,7 @@ func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	}
 }
 
+<<<<<<< HEAD
 
 //implement the third party package of unix.
 func Major(dev uint64) uint64 {
@@ -165,3 +176,14 @@ func Major(dev uint64) uint64 {
 func Minor(dev uint64) uint64 {
 	return dev & 0xFFFFFFFF
 }
+=======
+// Function to extract the major device number
+func getMajor(rdev uint64) uint64 {
+	return rdev >> 32 // Shift right by 32 bits to isolate the major number
+}
+
+// Function to extract the minor device number
+func getMinor(rdev uint64) uint64 {
+	return rdev & 0xFFFFFFFF // Mask with 0xFFFFFFFF to isolate the minor number
+}
+>>>>>>> f890526 ([Update]: Update the file without the third party packages  implementing the functions from the package)
