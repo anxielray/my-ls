@@ -3,23 +3,21 @@ package terminal
 import (
 	"os"
 	"strconv"
-	"syscall"
-	"unsafe"
 )
 
 func GetTerminalWidth() int {
 	defaultWidth := 80
 
-	var size [4]uint16
-	if _, _, err := syscall.Syscall(syscall.SYS_IOCTL,
-		uintptr(syscall.Stdin),
-		uintptr(syscall.TIOCGWINSZ),
-		uintptr(unsafe.Pointer(&size))); err == 0 {
-		return int(size[1])
+	// Try getting width using COLUMNS environment variable
+	if cols := os.Getenv("COLUMNS"); cols != "" {
+		if width, err := strconv.Atoi(cols); err == nil && width > 0 {
+			return width
+		}
 	}
 
-	if cols := os.Getenv("COLUMNS"); cols != "" {
-		if width, err := strconv.Atoi(cols); err == nil {
+	// Try getting width using TERM_COLUMNS as an alternative
+	if cols := os.Getenv("TERM_COLUMNS"); cols != "" {
+		if width, err := strconv.Atoi(cols); err == nil && width > 0 {
 			return width
 		}
 	}
