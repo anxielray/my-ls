@@ -15,7 +15,7 @@ import (
 
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 	if len(os.Args) > 2 {
-		//check for the path to display size
+		// check for the path to display size
 		for _, arg := range os.Args[1:] {
 			if strings.HasPrefix(arg, "-") {
 				continue
@@ -28,7 +28,6 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 			}
 		}
 	} else if len(os.Args) == 2 {
-		println("Checking")
 		path, _ := os.Getwd()
 		totalBlocks, _ := calculateTotalBlocks(path)
 		fmt.Printf("total %d\n", totalBlocks/2)
@@ -41,7 +40,7 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 	maxMajorWidth := 0
 	maxMinorWidth := 0
 
-	//printing the number of hardlinks of a specific file.
+	// printing the number of hardlinks of a specific file.
 	for _, file := range files {
 		nlinkWidth := len(fmt.Sprintf("%d", file.Nlink))
 		if nlinkWidth > maxNlinkWidth {
