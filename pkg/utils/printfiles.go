@@ -11,8 +11,6 @@ import (
 	T "my-ls-1/cmd/terminal"
 	FI "my-ls-1/pkg/fileinfo"
 	OP "my-ls-1/pkg/options"
-
-	"golang.org/x/sys/unix"
 )
 
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
@@ -63,8 +61,8 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 		}
 
 		if file.Mode&os.ModeDevice != 0 {
-			major := unix.Major(file.Rdev)
-			minor := unix.Minor(file.Rdev)
+			major := getMajor(file.Rdev)
+			minor := getMinor(file.Rdev)
 			majorWidth := len(fmt.Sprintf("%d", major))
 			minorWidth := len(fmt.Sprintf("%d", minor))
 			if majorWidth > maxMajorWidth {
@@ -89,8 +87,8 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 
 		size := ""
 		if file.Mode&os.ModeDevice != 0 {
-			major := unix.Major(file.Rdev)
-			minor := unix.Minor(file.Rdev)
+			major := getMajor(file.Rdev)
+			minor := getMinor(file.Rdev)
 			size = fmt.Sprintf("%*d, %*d", maxMajorWidth, major, maxMinorWidth, minor)
 		} else {
 			size = fmt.Sprintf("%*d", maxSizeWidth, file.Size)
@@ -156,4 +154,14 @@ func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	} else {
 		PrintColumnar(files, options)
 	}
+}
+
+// Function to extract the major device number
+func getMajor(rdev uint64) uint64 {
+	return rdev >> 32 // Shift right by 32 bits to isolate the major number
+}
+
+// Function to extract the minor device number
+func getMinor(rdev uint64) uint64 {
+	return rdev & 0xFFFFFFFF // Mask with 0xFFFFFFFF to isolate the minor number
 }
