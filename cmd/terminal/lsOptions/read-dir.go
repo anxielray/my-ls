@@ -43,7 +43,13 @@ func ReadDir(path string, options OP.Options) ([]FI.FileInfo, error) {
 		files = append(files, fileInfo)
 	}
 
-	S.SortFiles(files, options)
+	//we would only want to sort the entries from the second index if the option of hidden is true
+	if options.ShowHidden {
+		S.SortFiles(files[2:], options)
+	} else {
+		S.SortFiles(files, options)
+	}
+
 	return files, nil
 }
 
