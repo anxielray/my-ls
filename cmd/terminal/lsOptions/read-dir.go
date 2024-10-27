@@ -1,6 +1,7 @@
 package lsOptions
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,9 +26,9 @@ func ReadDir(path string, options OP.Options) ([]FI.FileInfo, error) {
 	files := make([]FI.FileInfo, 0, len(entries))
 
 	if options.ShowHidden {
-		AddSpecialEntry(path, ".", &files)
-		parentPath := filepath.Dir(path)
+		parentPath := fmt.Sprintf("%s/..", path)
 		AddSpecialEntry(parentPath, "..", &files)
+		AddSpecialEntry(path, ".", &files)
 	}
 
 	for _, entry := range entries {
@@ -53,5 +54,5 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	}
 	fileInfo := FI.CreateFileInfo(filepath.Dir(path), info)
 	fileInfo.Name = name
-	*files = append(*files, fileInfo)
+	*files = append([]FI.FileInfo{fileInfo}, *files...)
 }
