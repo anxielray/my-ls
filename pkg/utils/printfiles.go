@@ -5,7 +5,6 @@ import (
 	"math"
 	"os"
 	"os/user"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -26,7 +25,7 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 				file, _ := checkPathType(arg)
 				if file == "directory" {
 					PATH, _ := os.Getwd()
-					path := filepath.Join(PATH, arg)
+					path := fmt.Sprintf("%s/%s", PATH, arg)
 					totalBlocks, _ := calculateTotalBlocks(path, options)
 					fmt.Printf("total %d\n", totalBlocks)
 				}

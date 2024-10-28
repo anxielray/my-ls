@@ -1,8 +1,8 @@
 package fileinfo
 
 import (
+	"fmt"
 	"os"
-	"path/filepath"
 	"syscall"
 	"time"
 )
@@ -34,7 +34,7 @@ func CreateFileInfo(path string, info os.FileInfo) FileInfo {
 	}
 
 	if fileInfo.IsLink {
-		linkTarget, err := os.Readlink(filepath.Join(path, info.Name()))
+		linkTarget, err := os.Readlink(fmt.Sprintf("%s/%s", path, info.Name()))
 		if err == nil {
 			fileInfo.LinkTarget = linkTarget
 		}

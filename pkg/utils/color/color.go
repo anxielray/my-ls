@@ -2,7 +2,6 @@ package color
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 
 	FI "my-ls-1/pkg/fileinfo"
@@ -46,7 +45,7 @@ func Colorize(file FI.FileInfo, name string) string {
 	} else if file.Mode&os.ModeDevice != 0 {
 		colorCode = colorMap["bd"]
 	} else {
-		ext := filepath.Ext(name)
+		ext := Ext(name)
 		if ext != "" {
 			colorCode = colorMap["*"+ext]
 		}
@@ -57,4 +56,25 @@ func Colorize(file FI.FileInfo, name string) string {
 	}
 
 	return colorCode + name + ColorReset
+}
+
+func Ext(path string) string {
+	if len(path) == 0 {
+		return ""
+	}
+
+	// Find the last period in the path
+	lastDot := strings.LastIndex(path, ".")
+	if lastDot == -1 || lastDot == len(path)-1 {
+		return "" // No extension found
+	}
+
+	// Find the last slash to ensure it's part of the file name
+	lastSlash := strings.LastIndex(path[:lastDot], "/")
+	if lastSlash > -1 && lastSlash == len(path[:lastDot])-1 {
+		return "" // No extension found (it's a directory)
+	}
+
+	// Return the extension including the period
+	return path[lastDot:]
 }

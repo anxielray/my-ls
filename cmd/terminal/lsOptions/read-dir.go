@@ -3,7 +3,6 @@ package lsOptions
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	S "my-ls-1/internal/sort"
@@ -58,7 +57,34 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	if err != nil {
 		return
 	}
-	fileInfo := FI.CreateFileInfo(filepath.Dir(path), info)
+	fileInfo := FI.CreateFileInfo(Dir(path), info)
 	fileInfo.Name = name
 	*files = append([]FI.FileInfo{fileInfo}, *files...)
+}
+
+//Implementation of the filePath.Dir(path) function
+func Dir(path string) string {
+	// Handle empty path
+	if path == "" {
+		return "."
+	}
+
+	// Remove trailing slashes
+	path = strings.TrimRight(path, string(os.PathSeparator))
+
+	// Find last separator
+	i := strings.LastIndex(path, string(os.PathSeparator))
+
+	if i == -1 {
+		// No separator found
+		return "."
+	}
+
+	if i == 0 {
+		// Path starts with separator (root directory)
+		return string(os.PathSeparator)
+	}
+
+	// Return everything before last separator
+	return path[:i]
 }

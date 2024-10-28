@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	FI "my-ls-1/pkg/fileinfo"
 	OP "my-ls-1/pkg/options"
 	"os"
@@ -18,7 +19,7 @@ func calculateTotalBlocks(dir string, options OP.Options) (int64, error) {
 	// Add current (.) and parent (..) directory entries
 	if options.ShowHidden {
 		AddSpecialEntry(dir, ".", &files)
-		AddSpecialEntry(filepath.Join(dir, ".."), "..", &files)
+		AddSpecialEntry(fmt.Sprintf("%s/%s", dir, ".."), "..", &files)
 	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
