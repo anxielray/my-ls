@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -13,10 +14,9 @@ import (
 	OP "my-ls-1/pkg/options"
 )
 
-//implementation of the Unix command (ls -l)
+// implementation of the Unix command (ls -l)
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
-
-	if len(os.Args) > 2 {
+	if len(os.Args) > 2 { // path is declared
 		// check for the path to display size
 		for _, arg := range os.Args[1:] {
 			if strings.HasPrefix(arg, "-") {
@@ -24,15 +24,27 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 			} else {
 				file, _ := checkPathType(arg)
 				if file == "directory" {
-					PATH, _ := os.Getwd()
-					path := fmt.Sprintf("%s/%s", PATH, arg)
+					var path string
+					if isStandardLibrary(arg) {
+						path = arg
+					} else {
+						PATH, _ := os.Getwd()
+						path = fmt.Sprintf("%s/%s", PATH, arg)
+					}
+
 					totalBlocks, _ := calculateTotalBlocks(path, options)
 					fmt.Printf("total %d\n", totalBlocks)
 				}
 			}
 		}
 	} else if len(os.Args) == 2 {
-		path, _ := os.Getwd()
+		var path string
+		if isStandardLibrary(os.Args[1]) {
+			path = os.Args[1]
+		} else {
+			PATH, _ := os.Getwd()
+			path = fmt.Sprintf("%s/%s", PATH, os.Args[1])
+		}
 		totalBlocks, _ := calculateTotalBlocks(path, options)
 		fmt.Printf("total %d\n", totalBlocks)
 	}
@@ -161,7 +173,7 @@ func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	}
 }
 
-//implement the third party package of unix.
+// implement the third party package of unix.
 func Major(dev uint64) uint64 {
 	return (dev >> 32) & 0xFFFFFFFF
 }
@@ -170,40 +182,33 @@ func Minor(dev uint64) uint64 {
 	return dev & 0xFFFFFFFF
 }
 
-// Function to add current and parent directory entries to a FileInfo slice
-// func AddCurrentAndParentDirectory(files []FI.FileInfo) []FI.FileInfo {
+// isStandardLibrary checks if the given path is a standard library directory.
+func isStandardLibrary(path string) bool {
+	standardLibs := []string{"/usr/bin", "/etc", "/dev", "/usr/lib", "/usr/local/bin", "/bin", "/sbin"}
 
-// var path string
+	for _, lib := range standardLibs {
+		if filepath.Clean(path) == lib {
+			return true
+		}
+	}
+	return false
+}
 
-// // check for the path to display size
-// for _, arg := range os.Args[1:] {
-// 	if strings.HasPrefix(arg, "-") {
-// 		continue
-// 	} else {
-// 		path = arg
-// 	}
-// }
+// getBlocks calculates the number of blocks used by the specified directory.
+func getBlocks(path string, file FI.FileInfo) (int64, error) {
+	var totalBlocks int64
 
-// // Get file information for "." (current) and ".." (parent)
-// currentDirInfo, err := os.Stat(filepath.Join(path, "."))
-// if err != nil {
-// 	// Handle error if directory information cannot be retrieved
-// 	panic("Could not retrieve current directory information: " + err.Error())
-// }
-// parentDirInfo, err := os.Stat(filepath.Join(path, ".."))
-// if err != nil {
-// 	// Handle error if directory information cannot be retrieved
-// 	panic("Could not retrieve parent directory information: " + err.Error())
-// }
+	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// Sum up the blocks used by each file
+		totalBlocks += info.Size() / 512 // Assuming 512 bytes per block
+		return nil
+	})
+	if err != nil {
+		return 0, err
+	}
 
-// // Create FileInfo entries for "." and ".."
-// currentDir := FI.CreateFileInfo(path, currentDirInfo)
-// currentDir.Name = "." // Explicitly set the name to "."
-// parentDir := FI.CreateFileInfo(path, parentDirInfo)
-// parentDir.Name = ".." // Explicitly set the name to ".."
-
-// // Prepend the current and parent directory entries to the slice
-// files = append([]FI.FileInfo{currentDir, parentDir}, files...)
-
-// return files
-// }
+	return totalBlocks, nil
+}
