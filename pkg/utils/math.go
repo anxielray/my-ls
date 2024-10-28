@@ -6,6 +6,7 @@ import (
 	OP "my-ls-1/pkg/options"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // const blockSize int = 512 // Default block size in bytes
@@ -21,6 +22,7 @@ func calculateTotalBlocks(dir string, options OP.Options) (int64, error) {
 		AddSpecialEntry(dir, ".", &files)
 		AddSpecialEntry(fmt.Sprintf("%s/%s", dir, ".."), "..", &files)
 	}
+
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return 0, err
@@ -29,12 +31,15 @@ func calculateTotalBlocks(dir string, options OP.Options) (int64, error) {
 	for _, entry := range entries {
 		// Skip hidden entries if options.ShowHidden is false
 		// Retrieve FileInfo for each entry and add it to files
-		info, err := entry.Info()
-		if err != nil {
-			return 0, err
+		if !options.ShowHidden && !IsHidden(entry) {
+
+			info, err := entry.Info()
+			if err != nil {
+				return 0, err
+			}
+			fileInfo := FI.CreateFileInfo(dir, info)
+			files = append(files, fileInfo)
 		}
-		fileInfo := FI.CreateFileInfo(dir, info)
-		files = append(files, fileInfo)
 
 	}
 
@@ -53,4 +58,18 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	fileInfo := FI.CreateFileInfo(filepath.Dir(path), info)
 	fileInfo.Name = name
 	*files = append(*files, fileInfo)
+}
+
+/// IsHidden checks if a given DirEntry is a hidden directory.
+func IsHidden(entry os.DirEntry) bool {
+	// Check if it's a directory
+	if !entry.IsDir() {
+		return false
+	}
+
+	// Get the base name of the directory
+	dirName := entry.Name()
+
+	// Check if the directory name starts with a dot
+	return strings.HasPrefix(dirName, ".")
 }
