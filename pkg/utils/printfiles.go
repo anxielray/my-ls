@@ -193,22 +193,3 @@ func isStandardLibrary(path string) bool {
 	}
 	return false
 }
-
-// getBlocks calculates the number of blocks used by the specified directory.
-func getBlocks(path string, file FI.FileInfo) (int64, error) {
-	var totalBlocks int64
-
-	err := filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		// Sum up the blocks used by each file
-		totalBlocks += info.Size() / 512 // Assuming 512 bytes per block
-		return nil
-	})
-	if err != nil {
-		return 0, err
-	}
-
-	return totalBlocks, nil
-}
