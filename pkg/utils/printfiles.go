@@ -193,11 +193,3 @@ func isStandardLibrary(path string) bool {
 	}
 	return false
 }
-
-func corrupt(size string, file FI.FileInfo) string {
-	if file.Mode&os.ModeDevice != 0 {
-		return "1" + size
-	} else {
-		return size
-	}
-}
