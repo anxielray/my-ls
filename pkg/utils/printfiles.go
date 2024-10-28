@@ -173,6 +173,7 @@ func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	}
 }
 
+
 // implement the third party package of unix.
 func Major(dev uint64) uint64 {
 	return (dev >> 8) & 0xFF
