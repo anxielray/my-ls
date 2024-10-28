@@ -2,26 +2,19 @@ package utils
 
 import (
 	"fmt"
-	FI "my-ls-1/pkg/fileinfo"
-	OP "my-ls-1/pkg/options"
 	"os"
 	"path/filepath"
 	"strings"
-)
 
-// const blockSize int = 512 // Default block size in bytes
+	FI "my-ls-1/pkg/fileinfo"
+	OP "my-ls-1/pkg/options"
+)
 
 // This function calculates the total size in 1 KB blocks for the specified directory's entries only.
 func calculateTotalBlocks(dir string, options OP.Options) (int64, error) {
 	var totalBlocks int64
 	var files []FI.FileInfo
-
-	// Read the direct entries in the specified directory
-	// Add current (.) and parent (..) directory entries
-	if options.ShowHidden {
-		AddSpecialEntry(dir, ".", &files)
-		AddSpecialEntry(fmt.Sprintf("%s/%s", dir, ".."), "..", &files)
-	}
+	var hiddens []os.DirEntry
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -29,24 +22,36 @@ func calculateTotalBlocks(dir string, options OP.Options) (int64, error) {
 	}
 
 	for _, entry := range entries {
-		// Skip hidden entries if options.ShowHidden is false
-		// Retrieve FileInfo for each entry and add it to files
-		if !options.ShowHidden && !IsHidden(entry) {
+		// capture all the hidden entries
+		if IsHidden(entry) {
+			hiddens = append(hiddens, entry)
+		}
+	}
 
+	// Read the direct entries in the specified directory
+	if options.ShowHidden {
+		AddSpecialEntry(dir, ".", &files)
+		AddSpecialEntry(fmt.Sprintf("%s/%s", dir, ".."), "..", &files)
+		for _, ety := range hiddens {
+			AddSpecialEntry(fmt.Sprintf("%s/%s", dir, ety.Name()), ety.Name(), &files)
+		}
+	}
+
+	for _, entry := range entries {
+		if !IsHidden(entry) {
 			info, err := entry.Info()
 			if err != nil {
-				return 0, err
+				continue
 			}
 			fileInfo := FI.CreateFileInfo(dir, info)
 			files = append(files, fileInfo)
 		}
-
 	}
 
-	// Calculate total blocks based on the `files` slice, including "." and ".."
 	for _, file := range files {
 		totalBlocks += file.Blocks
 	}
+
 	return totalBlocks, nil
 }
 
@@ -60,7 +65,7 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	*files = append(*files, fileInfo)
 }
 
-/// IsHidden checks if a given DirEntry is a hidden directory.
+// / IsHidden checks if a given DirEntry is a hidden directory.
 func IsHidden(entry os.DirEntry) bool {
 	// Check if it's a directory
 	if !entry.IsDir() {

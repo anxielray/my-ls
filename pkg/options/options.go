@@ -7,13 +7,13 @@ import (
 )
 
 type Options struct {
-	LongFormat bool
-	Recursive  bool
-	ShowHidden bool
-	Reverse    bool
-	SortByTime bool
-	SortBySize bool
-	OnePerLine bool
+	LongFormat bool //-l
+	Recursive  bool // -R
+	ShowHidden bool // -a
+	Reverse    bool // -r
+	SortByTime bool // -t
+	SortBySize bool // -S
+	OnePerLine bool // -1
 	NoColor    bool
 }
 
