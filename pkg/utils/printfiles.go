@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"os/user"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -13,7 +14,9 @@ import (
 	OP "my-ls-1/pkg/options"
 )
 
+//implementation of the Unix command (ls -l)
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
+
 	if len(os.Args) > 2 {
 		// check for the path to display size
 		for _, arg := range os.Args[1:] {
@@ -22,15 +25,17 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 			} else {
 				file, _ := checkPathType(arg)
 				if file == "directory" {
-					totalBlocks, _ := calculateTotalBlocks(arg)
-					fmt.Printf("total %d\n", totalBlocks/2)
+					PATH, _ := os.Getwd()
+					path := filepath.Join(PATH, arg)
+					totalBlocks, _ := calculateTotalBlocks(path, options)
+					fmt.Printf("total %d\n", totalBlocks)
 				}
 			}
 		}
 	} else if len(os.Args) == 2 {
 		path, _ := os.Getwd()
-		totalBlocks, _ := calculateTotalBlocks(path)
-		fmt.Printf("total %d\n", totalBlocks/2)
+		totalBlocks, _ := calculateTotalBlocks(path, options)
+		fmt.Printf("total %d\n", totalBlocks)
 	}
 
 	maxNlinkWidth := 0
@@ -42,6 +47,7 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 
 	// printing the number of hardlinks of a specific file.
 	for _, file := range files {
+
 		nlinkWidth := len(fmt.Sprintf("%d", file.Nlink))
 		if nlinkWidth > maxNlinkWidth {
 			maxNlinkWidth = nlinkWidth
@@ -145,6 +151,7 @@ func PrintColumnar(files []FI.FileInfo, options OP.Options) {
 
 func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	if options.LongFormat {
+		// fullFiles := AddCurrentAndParentDirectory(files)
 		PrintLongFormat(files, options)
 	} else if options.OnePerLine {
 		for _, file := range files {
@@ -155,7 +162,6 @@ func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	}
 }
 
-
 //implement the third party package of unix.
 func Major(dev uint64) uint64 {
 	return (dev >> 32) & 0xFFFFFFFF
@@ -164,3 +170,41 @@ func Major(dev uint64) uint64 {
 func Minor(dev uint64) uint64 {
 	return dev & 0xFFFFFFFF
 }
+
+// Function to add current and parent directory entries to a FileInfo slice
+// func AddCurrentAndParentDirectory(files []FI.FileInfo) []FI.FileInfo {
+
+// var path string
+
+// // check for the path to display size
+// for _, arg := range os.Args[1:] {
+// 	if strings.HasPrefix(arg, "-") {
+// 		continue
+// 	} else {
+// 		path = arg
+// 	}
+// }
+
+// // Get file information for "." (current) and ".." (parent)
+// currentDirInfo, err := os.Stat(filepath.Join(path, "."))
+// if err != nil {
+// 	// Handle error if directory information cannot be retrieved
+// 	panic("Could not retrieve current directory information: " + err.Error())
+// }
+// parentDirInfo, err := os.Stat(filepath.Join(path, ".."))
+// if err != nil {
+// 	// Handle error if directory information cannot be retrieved
+// 	panic("Could not retrieve parent directory information: " + err.Error())
+// }
+
+// // Create FileInfo entries for "." and ".."
+// currentDir := FI.CreateFileInfo(path, currentDirInfo)
+// currentDir.Name = "." // Explicitly set the name to "."
+// parentDir := FI.CreateFileInfo(path, parentDirInfo)
+// parentDir.Name = ".." // Explicitly set the name to ".."
+
+// // Prepend the current and parent directory entries to the slice
+// files = append([]FI.FileInfo{currentDir, parentDir}, files...)
+
+// return files
+// }

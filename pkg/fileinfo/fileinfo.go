@@ -14,6 +14,7 @@ type FileInfo struct {
 	ModTime    time.Time
 	IsDir      bool
 	Nlink      uint64
+	Total      int64
 	Uid        uint32
 	Gid        uint32
 	IsLink     bool
@@ -40,10 +41,12 @@ func CreateFileInfo(path string, info os.FileInfo) FileInfo {
 	}
 
 	if stat, ok := info.Sys().(*syscall.Stat_t); ok {
+
 		fileInfo.Nlink = stat.Nlink
 		fileInfo.Uid = stat.Uid
 		fileInfo.Gid = stat.Gid
 		fileInfo.Rdev = stat.Rdev
+		fileInfo.Blocks = stat.Blocks / 2
 	}
 
 	return fileInfo

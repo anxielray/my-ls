@@ -19,7 +19,11 @@ type Options struct {
 
 func ParseFlags() (Options, []string) {
 	var options Options
+
+	//Collects the arguments passed on the command line
 	args := os.Args[1:]
+
+	//collects the entries to make a list of option
 	var dirs []string
 
 	for i := 0; i < len(args); i++ {
@@ -51,7 +55,7 @@ func ParseFlags() (Options, []string) {
 		} else if arg == "--" {
 			dirs = append(dirs, args[i+1:]...)
 			break
-		} else {
+			} else {
 			dirs = append(dirs, arg)
 		}
 	}

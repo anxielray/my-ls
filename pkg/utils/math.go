@@ -1,32 +1,55 @@
 package utils
 
 import (
-	"math"
+	FI "my-ls-1/pkg/fileinfo"
+	OP "my-ls-1/pkg/options"
 	"os"
 	"path/filepath"
 )
 
-//this function calculates the size of the files in the passed path directory and returns the size in MBs
-const blockSize = 512 // Default block size in bytes
+// const blockSize int = 512 // Default block size in bytes
 
-func calculateTotalBlocks(dir string) (int64, error) {
+// This function calculates the total size in 1 KB blocks for the specified directory's entries only.
+func calculateTotalBlocks(dir string, options OP.Options) (int64, error) {
 	var totalBlocks int64
+	var files []FI.FileInfo
 
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() {
-			fileSize := info.Size()
-			numBlocks := int64(math.Ceil(float64(fileSize) / float64(blockSize)))
-			totalBlocks += numBlocks
-		}
-		return nil
-	})
-
+	// Read the direct entries in the specified directory
+	// Add current (.) and parent (..) directory entries
+	if options.ShowHidden {
+		AddSpecialEntry(dir, ".", &files)
+		AddSpecialEntry(filepath.Join(dir, ".."), "..", &files)
+	}
+	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return 0, err
 	}
 
+	for _, entry := range entries {
+		// Skip hidden entries if options.ShowHidden is false
+		// Retrieve FileInfo for each entry and add it to files
+		info, err := entry.Info()
+		if err != nil {
+			return 0, err
+		}
+		fileInfo := FI.CreateFileInfo(dir, info)
+		files = append(files, fileInfo)
+
+	}
+
+	// Calculate total blocks based on the `files` slice, including "." and ".."
+	for _, file := range files {
+		totalBlocks += file.Blocks
+	}
 	return totalBlocks, nil
+}
+
+func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	fileInfo := FI.CreateFileInfo(filepath.Dir(path), info)
+	fileInfo.Name = name
+	*files = append(*files, fileInfo)
 }

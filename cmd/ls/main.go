@@ -10,7 +10,11 @@ import (
 )
 
 func main() {
+
+	//Initialize color function
 	C.InitColorMap()
+
+	//Parse command line flags and arguments
 	options, args := OP.ParseFlags()
 
 	if len(args) == 0 {
