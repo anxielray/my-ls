@@ -105,9 +105,9 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 		if file.Mode&os.ModeDevice != 0 {
 			major := Major(file.Rdev)
 			minor := Minor(file.Rdev)
-			size = fmt.Sprintf("%*d, %*d", maxMajorWidth, major, maxMinorWidth, minor)
+			size = fmt.Sprintf("%*d, %*d", maxMajorWidth, major, maxMinorWidth, minor) // this is a device
 		} else {
-			size = fmt.Sprintf("%*d", maxSizeWidth, file.Size)
+			size = fmt.Sprintf("%*d", maxSizeWidth, file.Size) // normal directory
 		}
 
 		fileName := FormatFileName(file, options)
@@ -175,11 +175,11 @@ func PrintFiles(files []FI.FileInfo, options OP.Options) {
 
 // implement the third party package of unix.
 func Major(dev uint64) uint64 {
-	return (dev >> 32) & 0xFFFFFFFF
+	return (dev >> 8) & 0xFF
 }
 
 func Minor(dev uint64) uint64 {
-	return dev & 0xFFFFFFFF
+	return dev & 0xFF
 }
 
 // isStandardLibrary checks if the given path is a standard library directory.
@@ -192,4 +192,12 @@ func isStandardLibrary(path string) bool {
 		}
 	}
 	return false
+}
+
+func corrupt(size string, file FI.FileInfo) string {
+	if file.Mode&os.ModeDevice != 0 {
+		return "1" + size
+	} else {
+		return size
+	}
 }
