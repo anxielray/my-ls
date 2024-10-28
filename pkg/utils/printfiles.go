@@ -16,7 +16,7 @@ import (
 
 // implementation of the Unix command (ls -l)
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
-	if len(os.Args) > 2 { // path is declared
+	if len(os.Args) > 2 {
 		// check for the path to display size
 		for _, arg := range os.Args[1:] {
 			if strings.HasPrefix(arg, "-") {
@@ -42,8 +42,9 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 		if isStandardLibrary(os.Args[1]) {
 			path = os.Args[1]
 		} else {
+			// fmt.Println(path)
 			PATH, _ := os.Getwd()
-			path = fmt.Sprintf("%s/%s", PATH, os.Args[1])
+			path = PATH // fmt.Sprintf("%s", PATH, os.Args[1])
 		}
 		totalBlocks, _ := calculateTotalBlocks(path, options)
 		fmt.Printf("total %d\n", totalBlocks)
@@ -172,7 +173,6 @@ func PrintFiles(files []FI.FileInfo, options OP.Options) {
 		PrintColumnar(files, options)
 	}
 }
-
 
 // implement the third party package of unix.
 func Major(dev uint64) uint64 {

@@ -15,6 +15,7 @@ func FormatFileName(file FI.FileInfo, options OP.Options) string {
 		name = C.Colorize(file, name)
 	}
 	if file.IsLink {
+		// fmt.Println("HI!")
 		name += " -> " + file.LinkTarget
 	}
 	return name
