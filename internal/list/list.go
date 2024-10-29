@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	T "my-ls-1/cmd/terminal/lsOptions"
@@ -60,22 +61,58 @@ func ListDir(path string, options OP.Options) {
 }
 
 func ListRecursive(path string, options OP.Options) {
+	fmt.Printf("%s:\n", path)
 	filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
 			fmt.Printf("ls: cannot access '%s': %v\n", p, err)
 			return nil
 		}
 		if d.IsDir() {
-			if p != path {
-				fmt.Printf("\n%s:\n", p)
+			if options.ShowHidden {
+				if p != path {
+					fmt.Printf("\n%s:\n", p)
+				}
+				files, err := T.ReadDir(p, options)
+				if err != nil {
+					fmt.Printf("ls: cannot access '%s': %v\n", p, err)
+					return nil
+				}
+				U.PrintFiles(files, options)
+			} else {
+				if !strings.HasPrefix(p, ".") {
+					if p != path {
+						fmt.Printf("\n./%s:\n", p)
+					}
+					files, err := T.ReadDir(p, options)
+					if err != nil {
+						fmt.Printf("ls: cannot access '%s': %v\n", p, err)
+						return nil
+					}
+					files = FilterHidden(files)
+					U.PrintFiles(files, options)
+				} else if p == "." {
+
+					files, err := T.ReadDir(p, options)
+					if err != nil {
+						fmt.Printf("ls: cannot access '%s': %v\n", p, err)
+						return nil
+					}
+
+					files = FilterHidden(files)
+					U.PrintFiles(files, options)
+				}
 			}
-			files, err := T.ReadDir(p, options)
-			if err != nil {
-				fmt.Printf("ls: cannot access '%s': %v\n", p, err)
-				return nil
-			}
-			U.PrintFiles(files, options)
 		}
 		return nil
 	})
+}
+
+func FilterHidden(entries []FI.FileInfo) []FI.FileInfo {
+	var filtered []FI.FileInfo
+	for _, entry := range entries {
+		if entry.Name[0] != '.' {
+			filtered = append(filtered, entry)
+		}
+	}
+	return filtered
 }

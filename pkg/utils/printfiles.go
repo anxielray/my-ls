@@ -24,7 +24,7 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 			if strings.HasPrefix(arg, "-") {
 				continue
 			} else {
-				
+
 				var path string
 				file, _ := checkPathType(arg)
 				if file == "symlink" {

@@ -62,7 +62,7 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	*files = append([]FI.FileInfo{fileInfo}, *files...)
 }
 
-//Implementation of the filePath.Dir(path) function
+// Implementation of the filePath.Dir(path) function
 func Dir(path string) string {
 	// Handle empty path
 	if path == "" {
