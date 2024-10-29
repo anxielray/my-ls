@@ -15,6 +15,8 @@ import (
 )
 
 // implementation of the Unix command (ls -l)
+var Path string
+
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 	if len(os.Args) > 2 {
 		// check for the path to display size
@@ -22,14 +24,21 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 			if strings.HasPrefix(arg, "-") {
 				continue
 			} else {
+				
+				var path string
 				file, _ := checkPathType(arg)
+				if file == "symlink" {
+					wd, _ := os.Getwd()
+					Path = fmt.Sprintf("%s/%s", wd, arg)
+					break
+				}
 				if file == "directory" {
-					var path string
 					if isStandardLibrary(arg) {
 						path = arg
 					} else {
 						PATH, _ := os.Getwd()
 						path = fmt.Sprintf("%s/%s", PATH, arg)
+						Path = path
 					}
 
 					totalBlocks, _ := calculateTotalBlocks(path, options)
@@ -42,9 +51,9 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 		if isStandardLibrary(os.Args[1]) {
 			path = os.Args[1]
 		} else {
-			// fmt.Println(path)
 			PATH, _ := os.Getwd()
-			path = PATH // fmt.Sprintf("%s", PATH, os.Args[1])
+			path = PATH
+			Path = path
 		}
 		totalBlocks, _ := calculateTotalBlocks(path, options)
 		fmt.Printf("total %d\n", totalBlocks)
@@ -94,6 +103,9 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 				maxSizeWidth = sizeWidth
 			}
 		}
+	}
+	if val, _ := IsSymlink(Path); val {
+		files, _ = GetSymlinksInDir(fmt.Sprintf("%s/..", Path))
 	}
 
 	for _, file := range files {
@@ -163,7 +175,6 @@ func PrintColumnar(files []FI.FileInfo, options OP.Options) {
 
 func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	if options.LongFormat {
-		// fullFiles := AddCurrentAndParentDirectory(files)
 		PrintLongFormat(files, options)
 	} else if options.OnePerLine {
 		for _, file := range files {

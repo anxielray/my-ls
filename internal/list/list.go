@@ -35,17 +35,18 @@ func ListSingleFile(path string, options OP.Options) {
 			file.LinkTarget = linkTarget
 		}
 	}
-
+	
 	if stat, ok := fileInfo.Sys().(*syscall.Stat_t); ok {
 		file.Nlink = stat.Nlink
 		file.Uid = stat.Uid
 		file.Gid = stat.Gid
 		file.Rdev = stat.Rdev
 	}
-
+	
 	if options.LongFormat {
+		fmt.Println("HI")
 		U.PrintLongFormat([]FI.FileInfo{file}, options)
-	} else {
+		} else {
 		fmt.Println(U.FormatFileName(file, options))
 	}
 }
