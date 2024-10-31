@@ -10,7 +10,7 @@ import (
 	OP "my-ls-1/pkg/options"
 )
 
-func ReadDir(path string, options OP.Options) ([]FI.FileInfo, error) {
+func ReadDirectory(path string, options OP.Options) ([]FI.FileInfo, error) {
 	dir, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func ReadDir(path string, options OP.Options) ([]FI.FileInfo, error) {
 		files = append(files, fileInfo)
 	}
 
-	//we would only want to sort the entries from the second index if the option of hidden is true
+	// we would only want to sort the entries from the second index if the option of hidden is true
 	if options.ShowHidden {
 		S.SortFiles(files[2:], options)
 	} else {

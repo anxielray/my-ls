@@ -52,7 +52,7 @@ func ListSingleFile(path string, options OP.Options) {
 }
 
 func ListDir(path string, options OP.Options) {
-	files, err := T.ReadDir(path, options)
+	files, err := T.ReadDirectory(path, options)
 	if err != nil {
 		fmt.Printf("ls: cannot access '%s': %v\n", path, err)
 		return
@@ -72,7 +72,7 @@ func ListRecursive(path string, options OP.Options) {
 				if p != path {
 					fmt.Printf("\n%s:\n", p)
 				}
-				files, err := T.ReadDir(p, options)
+				files, err := T.ReadDirectory(p, options)
 				if err != nil {
 					fmt.Printf("ls: cannot access '%s': %v\n", p, err)
 					return nil
@@ -83,7 +83,7 @@ func ListRecursive(path string, options OP.Options) {
 					if p != path {
 						fmt.Printf("\n./%s:\n", p)
 					}
-					files, err := T.ReadDir(p, options)
+					files, err := T.ReadDirectory(p, options)
 					if err != nil {
 						fmt.Printf("ls: cannot access '%s': %v\n", p, err)
 						return nil
@@ -92,7 +92,7 @@ func ListRecursive(path string, options OP.Options) {
 					U.PrintFiles(files, options)
 				} else if p == "." {
 
-					files, err := T.ReadDir(p, options)
+					files, err := T.ReadDirectory(p, options)
 					if err != nil {
 						fmt.Printf("ls: cannot access '%s': %v\n", p, err)
 						return nil
