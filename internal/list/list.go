@@ -2,9 +2,7 @@ package internal
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
-	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -60,51 +58,43 @@ func ListDir(path string, options OP.Options) {
 	U.PrintFiles(files, options)
 }
 
+// ListRecursive function to list files and directories recursively in reverse order
 func ListRecursive(path string, options OP.Options) {
-	fmt.Printf("%s:\n", path)
-	filepath.WalkDir(path, func(p string, d fs.DirEntry, err error) error {
-		if err != nil {
-			fmt.Printf("ls: cannot access '%s': %v\n", p, err)
-			return nil
-		}
-		if d.IsDir() {
+	var NewPath string
+	if !strings.HasSuffix(path, ".") && !strings.HasSuffix(path, "..") {
+
+		fmt.Printf("%s:\n", path)
+		files, _ := T.ReadDirectory(path, options)
+
+		if options.LongFormat {
 			if options.ShowHidden {
-				if p != path {
-					fmt.Printf("\n%s:\n", p)
-				}
-				files, err := T.ReadDirectory(p, options)
-				if err != nil {
-					fmt.Printf("ls: cannot access '%s': %v\n", p, err)
-					return nil
-				}
-				U.PrintFiles(files, options)
+				U.PrintLongFormat(files, options)
 			} else {
-				if !strings.HasPrefix(p, ".") {
-					if p != path {
-						fmt.Printf("\n./%s:\n", p)
-					}
-					files, err := T.ReadDirectory(p, options)
-					if err != nil {
-						fmt.Printf("ls: cannot access '%s': %v\n", p, err)
-						return nil
-					}
-					files = FilterHidden(files)
-					U.PrintFiles(files, options)
-				} else if p == "." {
-
-					files, err := T.ReadDirectory(p, options)
-					if err != nil {
-						fmt.Printf("ls: cannot access '%s': %v\n", p, err)
-						return nil
-					}
-
-					files = FilterHidden(files)
-					U.PrintFiles(files, options)
-				}
+				U.PrintLongFormat(FilterHidden(files), options)
+			}
+		} else {
+			if options.ShowHidden {
+			} else {
+				U.PrintFiles(FilterHidden(files), options)
 			}
 		}
-		return nil
-	})
+
+		fmt.Println()
+
+		// open  a loop to update the path for every entry
+		for _, file := range files {
+			if file.IsDir {
+
+				if strings.HasSuffix(path, "/") {
+					NewPath = fmt.Sprintf("%s%s", path, file.Name)
+				} else {
+					NewPath = fmt.Sprintf("%s/%s", path, file.Name)
+				}
+
+				ListRecursive(NewPath, options)
+			}
+		}
+	}
 }
 
 func FilterHidden(entries []FI.FileInfo) []FI.FileInfo {
@@ -115,4 +105,40 @@ func FilterHidden(entries []FI.FileInfo) []FI.FileInfo {
 		}
 	}
 	return filtered
+}
+
+func AddSpecialEntryReverse(path, name string, files *[]FI.FileInfo) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return
+	}
+	fileInfo := FI.CreateFileInfo(Dir(path), info)
+	fileInfo.Name = name
+	*files = append(*files, fileInfo)
+}
+
+func Dir(path string) string {
+	// Handle empty path
+	if path == "" {
+		return "."
+	}
+
+	// Remove trailing slashes
+	path = strings.TrimRight(path, string(os.PathSeparator))
+
+	// Find last separator
+	i := strings.LastIndex(path, string(os.PathSeparator))
+
+	if i == -1 {
+		// No separator found
+		return "."
+	}
+
+	if i == 0 {
+		// Path starts with separator (root directory)
+		return string(os.PathSeparator)
+	}
+
+	// Return everything before last separator
+	return path[:i]
 }
