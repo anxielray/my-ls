@@ -7,8 +7,12 @@ import (
 	OP "my-ls-1/pkg/options"
 )
 
+/*This function will take an array of fileInfo and sort them based on the conditions
+set by the flags passed on the command line. If the option for reverse was set to true
+this action takes place right after the sorting*/
 func SortFiles(files []FI.FileInfo, options OP.Options) {
 	CustomSort(files, func(i, j int) bool {
+
 		if options.SortByTime {
 			if !files[i].ModTime.Equal(files[j].ModTime) {
 				return files[i].ModTime.After(files[j].ModTime)
@@ -18,6 +22,7 @@ func SortFiles(files []FI.FileInfo, options OP.Options) {
 				return files[i].Size > files[j].Size
 			}
 		}
+
 		return CompareFilenamesAlphanumeric(files[i].Name, files[j].Name)
 	})
 
@@ -55,6 +60,7 @@ func ReverseSlice(slice []FI.FileInfo) {
 	}
 }
 
+//sorts the files rune by rune, pioritizing the special characters and numerical strings
 func CompareFilenamesAlphanumeric(a, b string) bool {
 	aRunes := []rune(a)
 	bRunes := []rune(b)
@@ -62,20 +68,18 @@ func CompareFilenamesAlphanumeric(a, b string) bool {
 	bLen := len(bRunes)
 
 	for i, j := 0, 0; i < aLen && j < bLen; {
-		// Skip non-alphanumeric characters
-		for i < aLen && !IsAlphanumeric(aRunes[i]) {
-			i++
-		}
-		for j < bLen && !IsAlphanumeric(bRunes[j]) {
-			j++
-		}
 
-		// If we've reached the end of either string, compare lengths
 		if i == aLen || j == bLen {
 			return aLen < bLen
 		}
 
-		// If both characters are digits, compare the whole number
+		if IsSpecialCharacter(aRunes[i]) && !IsSpecialCharacter(bRunes[j]) {
+			return true
+		}
+		if !IsSpecialCharacter(aRunes[i]) && IsSpecialCharacter(bRunes[j]) {
+			return false
+		}
+
 		if IsDigit(aRunes[i]) && IsDigit(bRunes[j]) {
 			aNum, aEnd := ExtractNumber(aRunes[i:])
 			bNum, bEnd := ExtractNumber(bRunes[j:])
@@ -87,18 +91,16 @@ func CompareFilenamesAlphanumeric(a, b string) bool {
 			i += aEnd
 			j += bEnd
 		} else {
-			// Compare characters case-insensitively
 			aLower := ToLower(aRunes[i])
 			bLower := ToLower(bRunes[j])
 			if aLower != bLower {
 				return aLower < bLower
 			}
-			i++
-			j++
 		}
+		i++
+		j++
 	}
 
-	// If all compared characters are the same, shorter string comes first
 	return aLen < bLen
 }
 
@@ -107,6 +109,7 @@ func IsAlphanumeric(r rune) bool {
 	return IsLetter(r) || IsDigit(r)
 }
 
+//This function gets the int from the rune provided
 func ExtractNumber(runes []rune) (int, int) {
 	num := 0
 	i := 0
@@ -118,10 +121,12 @@ func ExtractNumber(runes []rune) (int, int) {
 	return num, i
 }
 
+//checks if the rune is is a digit(0 -9)
 func IsDigit(r rune) bool {
 	return (r >= '0' && r <= '9')
 }
 
+//converts a rune to a lowercase string if is in uppercase
 func ToLower(r rune) rune {
 	if r >= 'A' && r <= 'Z' {
 		r = r + ('a' - 'A')
@@ -129,6 +134,28 @@ func ToLower(r rune) rune {
 	return r
 }
 
+//check if the rune is a letter
 func IsLetter(r rune) bool {
 	return ((r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z'))
+}
+
+//checks if the rune is a special character, despite the ascii value
+func IsSpecialCharacter(r rune) bool {
+	allowedSpecialChars := "!#$%&'()*+,-./:;<=>?@[]^_`{|}~"
+
+	if r == ' ' || containsRune(allowedSpecialChars, r) {
+		return true
+	}
+
+	return false
+}
+
+// containsRune checks if a string contains a specific rune.
+func containsRune(s string, r rune) bool {
+	for _, char := range s {
+		if char == r {
+			return true
+		}
+	}
+	return false
 }
