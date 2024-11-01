@@ -7,12 +7,16 @@ import (
 	FI "my-ls-1/pkg/fileinfo"
 )
 
+//set the default color which is white
 const (
 	ColorReset = "\033[0m"
 )
 
 var colorMap map[string]string
 
+/*This function will initialize the color environment variable and
+declare process it filling the map we declared to hold the colors
+of the different files*/
 func InitColorMap() {
 	colorMap = make(map[string]string)
 	lsColors := os.Getenv("LS_COLORS")
@@ -29,6 +33,7 @@ func InitColorMap() {
 	}
 }
 
+/*Declares the color of the files based on their types of files they are and extensions*/
 func Colorize(file FI.FileInfo, name string) string {
 	var colorCode string
 
@@ -58,23 +63,21 @@ func Colorize(file FI.FileInfo, name string) string {
 	return colorCode + name + ColorReset
 }
 
+//Tries to process the extension of a particular file
 func Ext(path string) string {
 	if len(path) == 0 {
 		return ""
 	}
 
-	// Find the last period in the path
 	lastDot := strings.LastIndex(path, ".")
 	if lastDot == -1 || lastDot == len(path)-1 {
-		return "" // No extension found
+		return ""
 	}
 
-	// Find the last slash to ensure it's part of the file name
 	lastSlash := strings.LastIndex(path[:lastDot], "/")
 	if lastSlash > -1 && lastSlash == len(path[:lastDot])-1 {
-		return "" // No extension found (it's a directory)
+		return ""
 	}
 
-	// Return the extension including the period
 	return path[lastDot:]
 }
