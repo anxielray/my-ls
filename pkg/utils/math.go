@@ -3,7 +3,6 @@ package utils
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	FI "my-ls-1/pkg/fileinfo"
@@ -60,7 +59,7 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	if err != nil {
 		return
 	}
-	fileInfo := FI.CreateFileInfo(filepath.Dir(path), info)
+	fileInfo := FI.CreateFileInfo(GetDir(path), info)
 	fileInfo.Name = name
 	*files = append(*files, fileInfo)
 }
@@ -77,4 +76,17 @@ func IsHidden(entry os.DirEntry) bool {
 
 	// Check if the directory name starts with a dot
 	return strings.HasPrefix(dirName, ".")
+}
+
+// GetDir returns the directory part of a file path
+func GetDir(path string) string {
+	// Trim any trailing slashes
+	path = strings.TrimRight(path, "/")
+	// Find the last occurrence of the slash
+	lastSlashIndex := strings.LastIndex(path, "/")
+	if lastSlashIndex == -1 {
+		return "." // No directory part, return current directory
+	}
+	// Return the substring up to the last slash
+	return path[:lastSlashIndex]
 }
