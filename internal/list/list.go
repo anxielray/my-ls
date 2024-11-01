@@ -60,8 +60,8 @@ func ListDir(path string, options OP.Options) {
 
 // ListRecursive function to list files and directories recursively in reverse order
 func ListRecursive(path string, options OP.Options) {
-	var NewPath string
-	if !strings.HasSuffix(path, ".") && !strings.HasSuffix(path, "..") {
+	if path == "." {
+		var NewPath string
 
 		fmt.Printf("%s:\n", path)
 		files, _ := T.ReadDirectory(path, options)
@@ -74,6 +74,43 @@ func ListRecursive(path string, options OP.Options) {
 			}
 		} else {
 			if options.ShowHidden {
+				U.PrintFiles(files, options)
+			} else {
+				U.PrintFiles(FilterHidden(files), options)
+			}
+		}
+
+		fmt.Println()
+
+		// open  a loop to update the path for every entry
+		for _, file := range files {
+			if file.IsDir {
+
+				if strings.HasSuffix(path, "/") {
+					NewPath = fmt.Sprintf("%s%s", path, file.Name)
+				} else {
+					NewPath = fmt.Sprintf("%s/%s", path, file.Name)
+				}
+
+				ListRecursive(NewPath, options)
+			}
+		}
+	}
+	if !strings.HasSuffix(path, ".") && !strings.HasSuffix(path, "..") {
+
+		var NewPath string
+		fmt.Printf("%s:\n", path)
+		files, _ := T.ReadDirectory(path, options)
+
+		if options.LongFormat {
+			if options.ShowHidden {
+				U.PrintLongFormat(files, options)
+			} else {
+				U.PrintLongFormat(FilterHidden(files), options)
+			}
+		} else {
+			if options.ShowHidden {
+				U.PrintFiles(files, options)
 			} else {
 				U.PrintFiles(FilterHidden(files), options)
 			}
