@@ -5,7 +5,6 @@ import (
 	"math"
 	"os"
 	"os/user"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -206,9 +205,55 @@ func isStandardLibrary(path string) bool {
 	standardLibs := []string{"/usr/bin", "/etc", "/dev", "/usr/lib", "/usr/local/bin", "/bin", "/sbin"}
 
 	for _, lib := range standardLibs {
-		if filepath.Clean(path) == lib {
+		if CleanPath(path) == lib {
 			return true
 		}
 	}
 	return false
+}
+
+// CleanPath normalizes a given path by removing redundant elements like "." and "..".
+func CleanPath(path string) string {
+	// Handle empty path case
+	if path == "" {
+		return "."
+	}
+
+	// Split the path by slashes
+	parts := strings.Split(path, "/")
+	var cleanedParts []string
+
+	for _, part := range parts {
+		switch part {
+		case "":
+			// Ignore empty parts (redundant slashes)
+			continue
+		case ".":
+			// Ignore current directory references
+			continue
+		case "..":
+			// Go up a directory, if possible
+			if len(cleanedParts) > 0 {
+				cleanedParts = cleanedParts[:len(cleanedParts)-1]
+			}
+		default:
+			// Add the normal part
+			cleanedParts = append(cleanedParts, part)
+		}
+	}
+
+	// Join the cleaned parts back into a path
+	cleanedPath := strings.Join(cleanedParts, "/")
+
+	// Handle leading slash for absolute paths
+	if strings.HasPrefix(path, "/") {
+		cleanedPath = "/" + cleanedPath
+	}
+
+	// Handle the case where the path ends up empty (i.e., root path)
+	if cleanedPath == "" {
+		return "."
+	}
+
+	return cleanedPath
 }
