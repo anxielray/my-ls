@@ -9,6 +9,7 @@ import (
 	C "my-ls-1/pkg/utils/color"
 )
 
+//Returns  a file name colored according to options passed
 func FormatFileName(file FI.FileInfo, options OP.Options) string {
 	name := file.Name
 	if !options.NoColor {
@@ -20,6 +21,7 @@ func FormatFileName(file FI.FileInfo, options OP.Options) string {
 	return name
 }
 
+//Funtion will format the modes of a file and return it as a string(human readable)
 func FormatPermissions(mode os.FileMode) string {
 	const rwx = "rwxrwxrwx"
 	perm := []byte("---------")
@@ -55,10 +57,10 @@ func FormatPermissions(mode os.FileMode) string {
 	return string(perm)
 }
 
+//This function sets the modes of the specific entries
 func FormatFileMode(mode os.FileMode) string {
 	var result strings.Builder
 
-	// File type
 	switch {
 	case mode&os.ModeDir != 0:
 		result.WriteRune('d')
@@ -78,7 +80,6 @@ func FormatFileMode(mode os.FileMode) string {
 		result.WriteRune('-')
 	}
 
-	// Permission bits
 	result.WriteString(FormatPermissions(mode))
 
 	return result.String()
