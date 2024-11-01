@@ -5,17 +5,16 @@ import (
 	"strconv"
 )
 
+//This function will retrieve a logical terminal width columns with a default of 80
 func GetTerminalWidth() int {
 	defaultWidth := 80
 
-	// Try getting width using COLUMNS environment variable
 	if cols := os.Getenv("COLUMNS"); cols != "" {
 		if width, err := strconv.Atoi(cols); err == nil && width > 0 {
 			return width
 		}
 	}
 
-	// Try getting width using TERM_COLUMNS as an alternative
 	if cols := os.Getenv("TERM_COLUMNS"); cols != "" {
 		if width, err := strconv.Atoi(cols); err == nil && width > 0 {
 			return width
