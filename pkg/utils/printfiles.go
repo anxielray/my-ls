@@ -22,7 +22,7 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 	if len(os.Args) > 2 {
 
 		//check if a file has been passed
-		if len(files) > 1 {
+		if len(files) > 1 || options.Recursive {
 
 			// check for the path to display size
 			for _, arg := range os.Args[1:] {
