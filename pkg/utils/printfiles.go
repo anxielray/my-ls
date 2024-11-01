@@ -18,34 +18,41 @@ import (
 var Path string
 
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
+
 	if len(os.Args) > 2 {
-		// check for the path to display size
-		for _, arg := range os.Args[1:] {
-			if strings.HasPrefix(arg, "-") {
-				continue
-			} else {
 
-				var path string
-				file, _ := checkPathType(arg)
-				if file == "symlink" {
-					wd, _ := os.Getwd()
-					Path = fmt.Sprintf("%s/%s", wd, arg)
-					break
-				}
-				if file == "directory" {
-					if isStandardLibrary(arg) {
-						path = arg
-					} else {
-						PATH, _ := os.Getwd()
-						path = fmt.Sprintf("%s/%s", PATH, arg)
-						Path = path
+		//check if a file has been passed
+		if len(files) > 1 {
+
+			// check for the path to display size
+			for _, arg := range os.Args[1:] {
+				if strings.HasPrefix(arg, "-") {
+					continue
+				} else {
+
+					var path string
+					file, _ := checkPathType(arg)
+					if file == "symlink" {
+						wd, _ := os.Getwd()
+						Path = fmt.Sprintf("%s/%s", wd, arg)
+						break
 					}
+					if file == "directory" {
+						if isStandardLibrary(arg) {
+							path = arg
+						} else {
+							PATH, _ := os.Getwd()
+							path = fmt.Sprintf("%s/%s", PATH, arg)
+							Path = path
+						}
 
-					totalBlocks, _ := calculateTotalBlocks(path, options)
-					fmt.Printf("total %d\n", totalBlocks)
+						totalBlocks, _ := calculateTotalBlocks(path, options)
+						fmt.Printf("total %d\n", totalBlocks)
+					}
 				}
 			}
 		}
+
 	} else if len(os.Args) == 2 {
 		var path string
 		if isStandardLibrary(os.Args[1]) {
