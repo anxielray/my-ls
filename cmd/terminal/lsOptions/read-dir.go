@@ -64,6 +64,7 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 
 // Implementation of the filePath.Dir(path) function
 func Dir(path string) string {
+	
 	// Handle empty path
 	if path == "" {
 		return "."
