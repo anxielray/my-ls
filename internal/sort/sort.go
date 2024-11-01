@@ -1,7 +1,6 @@
 package sort
 
 import (
-	"sort"
 	"strconv"
 
 	FI "my-ls-1/pkg/fileinfo"
@@ -9,7 +8,7 @@ import (
 )
 
 func SortFiles(files []FI.FileInfo, options OP.Options) {
-	sort.Slice(files, func(i, j int) bool {
+	CustomSort(files, func(i, j int) bool {
 		if options.SortByTime {
 			if !files[i].ModTime.Equal(files[j].ModTime) {
 				return files[i].ModTime.After(files[j].ModTime)
@@ -19,12 +18,33 @@ func SortFiles(files []FI.FileInfo, options OP.Options) {
 				return files[i].Size > files[j].Size
 			}
 		}
-
 		return CompareFilenamesAlphanumeric(files[i].Name, files[j].Name)
 	})
 
 	if options.Reverse {
 		ReverseSlice(files)
+	}
+}
+
+// CustomSort sorts a slice using a custom less function
+func CustomSort(slice interface{}, less func(i, j int) bool) {
+	switch s := slice.(type) {
+	case []FI.FileInfo:
+		bubbleSortFileInfo(s, less)
+	default:
+		panic("unsupported slice type")
+	}
+}
+
+// bubbleSortFileInfo implements bubble sort for a slice of FileInfo
+func bubbleSortFileInfo(slice []FI.FileInfo, less func(i, j int) bool) {
+	n := len(slice)
+	for i := 0; i < n-1; i++ {
+		for j := 0; j < n-i-1; j++ {
+			if less(j+1, j) {
+				slice[j], slice[j+1] = slice[j+1], slice[j]
+			}
+		}
 	}
 }
 
