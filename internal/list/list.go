@@ -12,6 +12,7 @@ import (
 	U "my-ls-1/pkg/utils"
 )
 
+//This function will be called when handlin a single file
 func ListSingleFile(path string, options OP.Options) {
 	fileInfo, err := os.Lstat(path)
 	if err != nil {
@@ -49,6 +50,7 @@ func ListSingleFile(path string, options OP.Options) {
 	}
 }
 
+//This function will list entries(files & directories) in a path passed as parameter.
 func ListDir(path string, options OP.Options) {
 	files, err := T.ReadDirectory(path, options)
 	if err != nil {
