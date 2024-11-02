@@ -2,7 +2,6 @@ package utils
 
 import (
 	"testing"
-	"time"
 
 	FI "my-ls-1/pkg/fileinfo"
 	OP "my-ls-1/pkg/options"
@@ -191,9 +190,4 @@ func TestCleanPath(t *testing.T) {
 			}
 		})
 	}
-}
-
-// Helper function for generating current time for testing
-func now() time.Time {
-	return time.Now()
 }
