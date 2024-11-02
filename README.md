@@ -74,6 +74,8 @@ The main objective of this project is to create a command that lists files and d
   - `-a`: Show all files, including hidden ones
   - `-r`: Reverse order of sorting
   - `-t`: Sort by modification time
+  - `-S`: Sort by size
+  - `-1`: list one per line
 
 
 ## Installation
