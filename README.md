@@ -63,6 +63,10 @@ To use the available flags
 ./my-ls -t
 
 ./my-ls -lR
+
+./my-ls -S
+
+./my-ls -1
 ```
 ## Testing
 ```bash
