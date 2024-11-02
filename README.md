@@ -15,6 +15,51 @@
 - [License](#license)
 - [Acknowledgement](#acknowledgements)
 
+## File Structure
+
+```sh
+mls/
+├─ LICENSE
+├─ README.md
+├─ cmd/
+│  ├─ ls/
+│  │  └─ main.go
+│  └─ terminal/
+│     ├─ lsOptions/
+│     │  ├─ read-dir.go
+│     │  └─ read-dir_test.go
+│     ├─ width.go
+│     └─ width_test.go
+├─ go.mod
+├─ internal/
+│  ├─ list/
+│  │  ├─ list.go
+│  │  └─ list_test.go
+│  └─ sort/
+│     ├─ sort.go
+│     └─ sort_test.go
+├─ pkg/
+│  ├─ fileinfo/
+│  │  ├─ fileinfo.go
+│  │  └─ fileinfo_test.go
+│  ├─ options/
+│  │  ├─ options.go
+│  │  └─ options_test.go
+│  └─ utils/
+│     ├─ color/
+│     │  ├─ color.go
+│     │  └─ color_test.go
+│     ├─ determinePath.go
+│     ├─ determinePath_test.go
+│     ├─ formatfiles.go
+│     ├─ formatfiles_test.go
+│     ├─ math.go
+│     ├─ math_test.go
+│     ├─ printfiles.go
+│     └─ printfiles_test.go
+└─ run.sh
+```
+
 ## Objectives
 
 The main objective of this project is to create a command that lists files and directories within a specified directory. By default, if no directory is specified, it lists files and directories in the current directory.
