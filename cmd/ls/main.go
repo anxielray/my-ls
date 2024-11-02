@@ -24,6 +24,7 @@ func main() {
 	}
 	args, _ = AddFullPathAndSort(args)
 	for i, arg := range args {
+
 		if len(args) > 1 {
 			if i > 0 {
 				fmt.Println()

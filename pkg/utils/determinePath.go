@@ -29,6 +29,7 @@ func checkPathType(path string) (string, error) {
 
 //checks if thep path is a symlink
 func IsSymlink(path string) (bool, error) {
+
 	info, err := os.Lstat(path)
 	if err != nil {
 		return false, err

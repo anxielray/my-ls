@@ -58,9 +58,25 @@ func ParseFlags() (Options, []string) {
 			dirs = append(dirs, args[i+1:]...)
 			break
 		} else {
+			if strings.HasSuffix(arg, "/") {
+				IsNormalFile(arg)
+			}
 			dirs = append(dirs, arg)
 		}
 	}
 
 	return options, dirs
+}
+
+func LinkMessage(path string) {
+	fmt.Printf("ls: cannot access '%s': Not a directory\n", path)
+}
+
+func IsNormalFile(path string) bool {
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		LinkMessage(path)
+		os.Exit(0)
+	}
+	return !fileInfo.IsDir()
 }
