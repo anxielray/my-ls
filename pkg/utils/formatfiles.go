@@ -16,7 +16,11 @@ func FormatFileName(file FI.FileInfo, options OP.Options) string {
 		name = C.Colorize(file, name)
 	}
 	if file.IsLink {
-		name += " -> " + file.LinkTarget
+		if options.LongFormat {
+			name += " -> " + file.LinkTarget
+		}else {
+			name = file.Name
+		}
 	}
 	return name
 }
