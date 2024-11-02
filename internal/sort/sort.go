@@ -62,6 +62,14 @@ func ReverseSlice(slice []FI.FileInfo) {
 
 //sorts the files rune by rune, pioritizing the special characters and numerical strings
 func CompareFilenamesAlphanumeric(a, b string) bool {
+	if a[0] == '.' && len(a) > 2 {
+		a = a[1:]
+	}
+
+	if b[0] == '.' && len(b) > 2 {
+		b = b[1:]
+	}
+
 	aRunes := []rune(a)
 	bRunes := []rune(b)
 	aLen := len(aRunes)
