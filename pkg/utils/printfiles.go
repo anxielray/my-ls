@@ -46,6 +46,7 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 
 						totalBlocks, _ := calculateTotalBlocks(path, options)
 						fmt.Printf("total %d\n", totalBlocks)
+						break
 					}
 				}
 			}
