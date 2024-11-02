@@ -3,18 +3,6 @@
 
 **My-ls-1** is a custom implementation of the Unix `ls` command written in Go. This project aims to replicate the functionality of the original `ls` command with certain variations and additional features.
 
-## Table of Contents
-
-- [Objective](#objectives)
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Test](#testing)
-- [Contribution](#contribution)
-- [Authors](#authors)
-- [License](#license)
-- [Acknowledgement](#acknowledgements)
-
 ## File Structure
 
 ```sh
@@ -59,6 +47,19 @@ mls/
 │     └─ printfiles_test.go
 └─ run.sh
 ```
+
+## Table of Contents
+
+- [Objective](#objectives)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Test](#testing)
+- [Contribution](#contribution)
+- [Authors](#authors)
+- [License](#license)
+- [Acknowledgement](#acknowledgements)
+
 
 ## Objectives
 
