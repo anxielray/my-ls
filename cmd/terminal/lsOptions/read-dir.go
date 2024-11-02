@@ -10,6 +10,8 @@ import (
 	OP "my-ls-1/pkg/options"
 )
 
+/*This function will take the path and the optioins issuedon the command line
+and processes and returns a slice of fileinfos from the path entries*/
 func ReadDirectory(path string, options OP.Options) ([]FI.FileInfo, error) {
 	dir, err := os.Open(path)
 	if err != nil {
@@ -42,16 +44,13 @@ func ReadDirectory(path string, options OP.Options) ([]FI.FileInfo, error) {
 		files = append(files, fileInfo)
 	}
 
-	// we would only want to sort the entries from the second index if the option of hidden is true
-	if options.ShowHidden {
-		S.SortFiles(files[2:], options)
-	} else {
-		S.SortFiles(files, options)
-	}
+	S.SortFiles(files, options)
 
 	return files, nil
 }
 
+/*When the options of show all is set to true, the function will be called
+to add the entries of the current directory and the parent directory*/
 func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -62,30 +61,26 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	*files = append([]FI.FileInfo{fileInfo}, *files...)
 }
 
-// Implementation of the filePath.Dir(path) function
+/*The Dir function is designed to return the directory portion of a given
+file path. It processes the input path string and extracts the directory
+component, taking care of various edge cases*/
 func Dir(path string) string {
 
-	// Handle empty path
 	if path == "" {
 		return "."
 	}
 
-	// Remove trailing slashes
 	path = strings.TrimRight(path, string(os.PathSeparator))
 
-	// Find last separator
 	i := strings.LastIndex(path, string(os.PathSeparator))
 
 	if i == -1 {
-		// No separator found
 		return "."
 	}
 
 	if i == 0 {
-		// Path starts with separator (root directory)
 		return string(os.PathSeparator)
 	}
 
-	// Return everything before last separator
 	return path[:i]
 }

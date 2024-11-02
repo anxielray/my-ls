@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"os/user"
 	"strings"
@@ -13,9 +12,9 @@ import (
 	OP "my-ls-1/pkg/options"
 )
 
-// implementation of the Unix command (ls -l)
 var Path string
 
+//This function will print entries in the long format. (ls -l)
 func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 
 	if len(os.Args) > 2 {
@@ -149,8 +148,12 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 	}
 }
 
+//This function will format the files in the terminal correctly, based on the column width
 func PrintColumnar(files []FI.FileInfo, options OP.Options) {
 	termWidth := T.GetTerminalWidth()
+	if termWidth < 1 {
+		termWidth = 80
+	}
 
 	maxWidth := 0
 	for _, file := range files {
@@ -166,19 +169,21 @@ func PrintColumnar(files []FI.FileInfo, options OP.Options) {
 		numCols = 1
 	}
 
-	numRows := int(math.Ceil(float64(len(files)) / float64(numCols)))
+	numRows := (len(files) + numCols - 1) / numCols
 
 	for i := 0; i < numRows; i++ {
 		for j := 0; j < numCols; j++ {
 			idx := j*numRows + i
 			if idx < len(files) {
-				fmt.Printf("%-*s", colWidth, FormatFileName(files[idx], options))
+				fileName := FormatFileName(files[idx], options)
+				fmt.Printf("%-*s", colWidth, fileName)
 			}
 		}
 		fmt.Println()
 	}
 }
 
+//This functions lists entries to the console based on the option long format
 func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	if options.LongFormat {
 		PrintLongFormat(files, options)
@@ -191,7 +196,8 @@ func PrintFiles(files []FI.FileInfo, options OP.Options) {
 	}
 }
 
-// implement the third party package of unix.
+/*Extract major and minor device numbers from a uintptr,
+which typically represents the underlying system's device information.*/
 func Major(dev uint64) uint64 {
 	return (dev >> 8) & 0xFF
 }
@@ -214,43 +220,35 @@ func isStandardLibrary(path string) bool {
 
 // CleanPath normalizes a given path by removing redundant elements like "." and "..".
 func CleanPath(path string) string {
-	// Handle empty path case
+
 	if path == "" {
 		return "."
 	}
 
-	// Split the path by slashes
 	parts := strings.Split(path, "/")
 	var cleanedParts []string
 
 	for _, part := range parts {
 		switch part {
 		case "":
-			// Ignore empty parts (redundant slashes)
 			continue
 		case ".":
-			// Ignore current directory references
 			continue
 		case "..":
-			// Go up a directory, if possible
 			if len(cleanedParts) > 0 {
 				cleanedParts = cleanedParts[:len(cleanedParts)-1]
 			}
 		default:
-			// Add the normal part
 			cleanedParts = append(cleanedParts, part)
 		}
 	}
 
-	// Join the cleaned parts back into a path
 	cleanedPath := strings.Join(cleanedParts, "/")
 
-	// Handle leading slash for absolute paths
 	if strings.HasPrefix(path, "/") {
 		cleanedPath = "/" + cleanedPath
 	}
 
-	// Handle the case where the path ends up empty (i.e., root path)
 	if cleanedPath == "" {
 		return "."
 	}

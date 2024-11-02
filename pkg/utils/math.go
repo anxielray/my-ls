@@ -21,13 +21,11 @@ func calculateTotalBlocks(dir string, options OP.Options) (int64, error) {
 	}
 
 	for _, entry := range entries {
-		// capture all the hidden entries
 		if IsHidden(entry) {
 			hiddens = append(hiddens, entry)
 		}
 	}
 
-	// Read the direct entries in the specified directory
 	if options.ShowHidden {
 		AddSpecialEntry(dir, ".", &files)
 		AddSpecialEntry(fmt.Sprintf("%s/%s", dir, ".."), "..", &files)
@@ -64,29 +62,26 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	*files = append(*files, fileInfo)
 }
 
-// / IsHidden checks if a given DirEntry is a hidden directory.
+// / IsHidden checks if a given DirEntry is a hidden directory/file.
 func IsHidden(entry os.DirEntry) bool {
-	// Check if it's a directory
+
 	if !entry.IsDir() {
 		return false
 	}
 
-	// Get the base name of the directory
 	dirName := entry.Name()
 
-	// Check if the directory name starts with a dot
 	return strings.HasPrefix(dirName, ".")
 }
 
 // GetDir returns the directory part of a file path
 func GetDir(path string) string {
-	// Trim any trailing slashes
+
 	path = strings.TrimRight(path, "/")
-	// Find the last occurrence of the slash
 	lastSlashIndex := strings.LastIndex(path, "/")
+
 	if lastSlashIndex == -1 {
-		return "." // No directory part, return current directory
+		return "."
 	}
-	// Return the substring up to the last slash
 	return path[:lastSlashIndex]
 }

@@ -51,6 +51,9 @@ func main() {
 	}
 }
 
+/*This function will take an array of entries, and will sort the array
+by seperating the directories from the files and prepend the files and
+returns a sorted array*/
 func AddFullPathAndSort(shortPaths []string) ([]string, error) {
 
 	// Separate files and directories

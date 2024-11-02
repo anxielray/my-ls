@@ -12,6 +12,7 @@ import (
 	U "my-ls-1/pkg/utils"
 )
 
+//This function will be called when handlin a single file
 func ListSingleFile(path string, options OP.Options) {
 	fileInfo, err := os.Lstat(path)
 	if err != nil {
@@ -49,6 +50,7 @@ func ListSingleFile(path string, options OP.Options) {
 	}
 }
 
+//This function will list entries(files & directories) in a path passed as parameter.
 func ListDir(path string, options OP.Options) {
 	files, err := T.ReadDirectory(path, options)
 	if err != nil {
@@ -58,7 +60,7 @@ func ListDir(path string, options OP.Options) {
 	U.PrintFiles(files, options)
 }
 
-// ListRecursive function to list files and directories recursively in reverse order
+//The function to list files and directories recursively
 func ListRecursive(path string, options OP.Options) {
 	if path == "." {
 		var NewPath string
@@ -82,7 +84,6 @@ func ListRecursive(path string, options OP.Options) {
 
 		fmt.Println()
 
-		// open  a loop to update the path for every entry
 		for _, file := range files {
 			if file.IsDir {
 
@@ -134,6 +135,7 @@ func ListRecursive(path string, options OP.Options) {
 	}
 }
 
+//The function will eliminate the directories and file that start in a period(.)
 func FilterHidden(entries []FI.FileInfo) []FI.FileInfo {
 	var filtered []FI.FileInfo
 	for _, entry := range entries {
@@ -142,40 +144,4 @@ func FilterHidden(entries []FI.FileInfo) []FI.FileInfo {
 		}
 	}
 	return filtered
-}
-
-func AddSpecialEntryReverse(path, name string, files *[]FI.FileInfo) {
-	info, err := os.Stat(path)
-	if err != nil {
-		return
-	}
-	fileInfo := FI.CreateFileInfo(Dir(path), info)
-	fileInfo.Name = name
-	*files = append(*files, fileInfo)
-}
-
-func Dir(path string) string {
-	// Handle empty path
-	if path == "" {
-		return "."
-	}
-
-	// Remove trailing slashes
-	path = strings.TrimRight(path, string(os.PathSeparator))
-
-	// Find last separator
-	i := strings.LastIndex(path, string(os.PathSeparator))
-
-	if i == -1 {
-		// No separator found
-		return "."
-	}
-
-	if i == 0 {
-		// Path starts with separator (root directory)
-		return string(os.PathSeparator)
-	}
-
-	// Return everything before last separator
-	return path[:i]
 }
