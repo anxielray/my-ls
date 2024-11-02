@@ -64,7 +64,6 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 
 // / IsHidden checks if a given DirEntry is a hidden directory/file.
 func IsHidden(entry os.DirEntry) bool {
-
 	if !entry.IsDir() {
 		return false
 	}
@@ -76,7 +75,6 @@ func IsHidden(entry os.DirEntry) bool {
 
 // GetDir returns the directory part of a file path
 func GetDir(path string) string {
-
 	path = strings.TrimRight(path, "/")
 	lastSlashIndex := strings.LastIndex(path, "/")
 
