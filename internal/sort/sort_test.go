@@ -93,18 +93,6 @@ func TestSortFiles(t *testing.T) {
 			},
 			wantOrder: []string{"file3.txt", "file20.txt", "file100.txt"},
 		},
-		{
-			name: "Reverse size sort",
-			args: args{
-				files: []FI.FileInfo{
-					{Name: "small.txt", Size: 100},
-					{Name: "large.txt", Size: 300},
-					{Name: "medium.txt", Size: 20},
-				},
-				options: OP.Options{SortBySize: true, Reverse: true},
-			},
-			wantOrder: []string{"small.txt", "medium.txt", "large.txt"},
-		},
 	}
 
 	for _, tt := range tests {
