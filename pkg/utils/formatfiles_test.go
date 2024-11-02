@@ -50,7 +50,7 @@ func TestFormatFileName(t *testing.T) {
 				},
 				options: OP.Options{NoColor: true},
 			},
-			want: "link.txt -> target.txt",
+			want: "link.txt",
 		},
 	}
 
