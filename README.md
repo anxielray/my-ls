@@ -6,7 +6,7 @@
 ## File Structure
 
 ```sh
-mls/
+my-ls-1/
 ├─ LICENSE
 ├─ README.md
 ├─ cmd/
