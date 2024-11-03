@@ -10,8 +10,10 @@ import (
 	OP "my-ls-1/pkg/options"
 )
 
-/*This function will take the path and the optioins issuedon the command line
-and processes and returns a slice of fileinfos from the path entries*/
+/*
+This function will take the path and the optioins issuedon the command line
+and processes and returns a slice of fileinfos from the path entries
+*/
 func ReadDirectory(path string, options OP.Options) ([]FI.FileInfo, error) {
 	dir, err := os.Open(path)
 	if err != nil {
@@ -49,8 +51,10 @@ func ReadDirectory(path string, options OP.Options) ([]FI.FileInfo, error) {
 	return files, nil
 }
 
-/*When the options of show all is set to true, the function will be called
-to add the entries of the current directory and the parent directory*/
+/*
+When the options of show all is set to true, the function will be called
+to add the entries of the current directory and the parent directory
+*/
 func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	info, err := os.Stat(path)
 	if err != nil {
@@ -61,9 +65,11 @@ func AddSpecialEntry(path, name string, files *[]FI.FileInfo) {
 	*files = append([]FI.FileInfo{fileInfo}, *files...)
 }
 
-/*The Dir function is designed to return the directory portion of a given
+/*
+The Dir function is designed to return the directory portion of a given
 file path. It processes the input path string and extracts the directory
-component, taking care of various edge cases*/
+component, taking care of various edge cases
+*/
 func Dir(path string) string {
 
 	if path == "" {

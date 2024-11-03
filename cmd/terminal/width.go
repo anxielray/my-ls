@@ -5,7 +5,7 @@ import (
 	"strconv"
 )
 
-//This function will retrieve a logical terminal width columns with a default of 80
+// This function will retrieve a logical terminal width columns with a default of 80
 func GetTerminalWidth() int {
 	defaultWidth := 80
 

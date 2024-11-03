@@ -7,9 +7,11 @@ import (
 	OP "my-ls-1/pkg/options"
 )
 
-/*This function will take an array of fileInfo and sort them based on the conditions
+/*
+This function will take an array of fileInfo and sort them based on the conditions
 set by the flags passed on the command line. If the option for reverse was set to true
-this action takes place right after the sorting*/
+this action takes place right after the sorting
+*/
 func SortFiles(files []FI.FileInfo, options OP.Options) {
 	CustomSort(files, func(i, j int) bool {
 
@@ -60,7 +62,7 @@ func ReverseSlice(slice []FI.FileInfo) {
 	}
 }
 
-//sorts the files rune by rune, pioritizing the special characters and numerical strings
+// sorts the files rune by rune, pioritizing the special characters and numerical strings
 func CompareFilenamesAlphanumeric(a, b string) bool {
 	if a[0] == '.' && len(a) > 2 {
 		a = a[1:]
@@ -117,7 +119,7 @@ func IsAlphanumeric(r rune) bool {
 	return IsLetter(r) || IsDigit(r)
 }
 
-//This function gets the int from the rune provided
+// This function gets the int from the rune provided
 func ExtractNumber(runes []rune) (int, int) {
 	num := 0
 	i := 0
@@ -129,12 +131,12 @@ func ExtractNumber(runes []rune) (int, int) {
 	return num, i
 }
 
-//checks if the rune is is a digit(0 -9)
+// checks if the rune is is a digit(0 -9)
 func IsDigit(r rune) bool {
 	return (r >= '0' && r <= '9')
 }
 
-//converts a rune to a lowercase string if is in uppercase
+// converts a rune to a lowercase string if is in uppercase
 func ToLower(r rune) rune {
 	if r >= 'A' && r <= 'Z' {
 		r = r + ('a' - 'A')
@@ -142,12 +144,12 @@ func ToLower(r rune) rune {
 	return r
 }
 
-//check if the rune is a letter
+// check if the rune is a letter
 func IsLetter(r rune) bool {
 	return ((r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z'))
 }
 
-//checks if the rune is a special character, despite the ascii value
+// checks if the rune is a special character, despite the ascii value
 func IsSpecialCharacter(r rune) bool {
 	allowedSpecialChars := "!#$%&'()*+,-./:;<=>?@[]^_`{|}~"
 

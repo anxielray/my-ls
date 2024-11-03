@@ -7,16 +7,18 @@ import (
 	FI "my-ls-1/pkg/fileinfo"
 )
 
-//set the default color which is white
+// set the default color which is white
 const (
 	ColorReset = "\033[0m"
 )
 
 var colorMap map[string]string
 
-/*This function will initialize the color environment variable and
+/*
+This function will initialize the color environment variable and
 declare process it filling the map we declared to hold the colors
-of the different files*/
+of the different files
+*/
 func InitColorMap() {
 	colorMap = make(map[string]string)
 	lsColors := os.Getenv("LS_COLORS")
@@ -63,7 +65,7 @@ func Colorize(file FI.FileInfo, name string) string {
 	return colorCode + name + ColorReset
 }
 
-//Tries to process the extension of a particular file
+// Tries to process the extension of a particular file
 func Ext(path string) string {
 	if len(path) == 0 {
 		return ""

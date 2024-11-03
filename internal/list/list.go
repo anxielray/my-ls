@@ -12,7 +12,7 @@ import (
 	U "my-ls-1/pkg/utils"
 )
 
-//This function will be called when handlin a single file
+// This function will be called when handlin a single file
 func ListSingleFile(path string, options OP.Options) {
 	fileInfo, err := os.Lstat(path)
 	if err != nil {
@@ -50,7 +50,7 @@ func ListSingleFile(path string, options OP.Options) {
 	}
 }
 
-//This function will list entries(files & directories) in a path passed as parameter.
+// This function will list entries(files & directories) in a path passed as parameter.
 func ListDir(path string, options OP.Options) {
 	files, err := T.ReadDirectory(path, options)
 	if err != nil {
@@ -60,7 +60,7 @@ func ListDir(path string, options OP.Options) {
 	U.PrintFiles(files, options)
 }
 
-//The function to list files and directories recursively
+// The function to list files and directories recursively
 func ListRecursive(path string, options OP.Options) {
 	if path == "." {
 		var NewPath string
@@ -135,7 +135,7 @@ func ListRecursive(path string, options OP.Options) {
 	}
 }
 
-//The function will eliminate the directories and file that start in a period(.)
+// The function will eliminate the directories and file that start in a period(.)
 func FilterHidden(entries []FI.FileInfo) []FI.FileInfo {
 	var filtered []FI.FileInfo
 	for _, entry := range entries {

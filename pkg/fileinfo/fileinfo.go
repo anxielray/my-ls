@@ -23,7 +23,7 @@ type FileInfo struct {
 	Blocks     int64
 }
 
-//This function creates a customized FileInfo structure from the standard Golang fileInfo object
+// This function creates a customized FileInfo structure from the standard Golang fileInfo object
 func CreateFileInfo(path string, info os.FileInfo) FileInfo {
 	fileInfo := FileInfo{
 		Name:    info.Name(),

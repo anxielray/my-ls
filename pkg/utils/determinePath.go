@@ -27,7 +27,7 @@ func checkPathType(path string) (string, error) {
 	}
 }
 
-//checks if thep path is a symlink
+// checks if thep path is a symlink
 func IsSymlink(path string) (bool, error) {
 
 	info, err := os.Lstat(path)
@@ -37,7 +37,7 @@ func IsSymlink(path string) (bool, error) {
 	return info.Mode()&os.ModeSymlink != 0, nil
 }
 
-//Gets all the symlinks in a given path
+// Gets all the symlinks in a given path
 func GetSymlinksInDir(dirPath string) ([]FI.FileInfo, error) {
 	var symlinks []FI.FileInfo
 

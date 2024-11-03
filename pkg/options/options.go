@@ -17,10 +17,12 @@ type Options struct {
 	NoColor    bool
 }
 
-/*The function will collect the command line arguments and sort them into flags
+/*
+The function will collect the command line arguments and sort them into flags
 and files. Declares each flag as well. If the option is -- the functioin will
 treat it as current directory. The function returns options boolean values
-as well as the array containing the files/directories to be displayed by the ls command.*/
+as well as the array containing the files/directories to be displayed by the ls command.
+*/
 func ParseFlags() (Options, []string) {
 	var options Options
 

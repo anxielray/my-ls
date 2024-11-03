@@ -9,7 +9,7 @@ import (
 	C "my-ls-1/pkg/utils/color"
 )
 
-//Returns  a file name colored according to options passed
+// Returns  a file name colored according to options passed
 func FormatFileName(file FI.FileInfo, options OP.Options) string {
 	name := file.Name
 	if !options.NoColor {
@@ -18,14 +18,14 @@ func FormatFileName(file FI.FileInfo, options OP.Options) string {
 	if file.IsLink {
 		if options.LongFormat {
 			name += " -> " + file.LinkTarget
-		}else {
+		} else {
 			name = file.Name
 		}
 	}
 	return name
 }
 
-//Funtion will format the modes of a file and return it as a string(human readable)
+// Funtion will format the modes of a file and return it as a string(human readable)
 func FormatPermissions(mode os.FileMode) string {
 	const rwx = "rwxrwxrwx"
 	perm := []byte("---------")
@@ -61,7 +61,7 @@ func FormatPermissions(mode os.FileMode) string {
 	return string(perm)
 }
 
-//This function sets the modes of the specific entries
+// This function sets the modes of the specific entries
 func FormatFileMode(mode os.FileMode) string {
 	var result strings.Builder
 
