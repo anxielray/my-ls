@@ -112,6 +112,7 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 	}
 	if val, _ := IsSymlink(Path); val {
 		files, _ = GetSymlinksInDir(fmt.Sprintf("%s/..", Path))
+		files = filterSymLink(files)
 	}
 
 	for _, file := range files {
@@ -149,7 +150,17 @@ func PrintLongFormat(files []FI.FileInfo, options OP.Options) {
 	}
 }
 
-// This function will format the files in the terminal correctly, based on the column width
+func filterSymLink(files []FI.FileInfo) []FI.FileInfo {
+	link := os.Args[len(os.Args)-1]
+	for _, fi := range files {
+		if fi.Name == link {
+			return []FI.FileInfo{fi}
+		}
+	}
+	return files
+}
+
+//This function will format the files in the terminal correctly, based on the column width
 func PrintColumnar(files []FI.FileInfo, options OP.Options) {
 	termWidth := T.GetTerminalWidth()
 	if termWidth < 1 {
